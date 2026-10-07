@@ -1,0 +1,178 @@
+/* ==========================================
+   🌟 GLOBAL VARIABLES (GALI-SAFAR THEME)
+   ========================================== */
+@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;800;900&display=swap');
+
+:root {
+    --primary: #ff6b00;
+    --primary-light: #fff0e6;
+    --secondary: #1e293b;
+    --success: #16a34a;
+    --danger: #ef4444;
+    --bg-color: #ffffff;
+    --text-main: #1e293b;
+    --text-muted: #64748b;
+    --border-color: #e2e8f0;
+    --shadow-soft: 0 4px 15px rgba(0, 0, 0, 0.04);
+    --shadow-card: 0 8px 25px rgba(0, 0, 0, 0.08);
+    --gradient: linear-gradient(135deg, #ff6b00 0%, #ff8c00 100%);
+    --whatsapp: #25D366;
+    --radius-md: 16px;
+    --glass-bg: rgba(255, 255, 255, 0.85);
+}
+
+/* 🌙 DARK MODE SYNC (Linked with ui.js) */
+body.dark-mode {
+    --bg-color: #0f172a;
+    --text-main: #f8fafc;
+    --text-muted: #94a3b8;
+    --border-color: #1e293b;
+    --glass-bg: rgba(15, 23, 42, 0.85);
+    --shadow-soft: 0 4px 15px rgba(0, 0, 0, 0.4);
+    --shadow-card: 0 8px 25px rgba(0, 0, 0, 0.6);
+    --primary-light: #331500;
+}
+
+/* ==========================================
+   ⚙️ BASE RESETS & APP CONTAINER
+   ========================================== */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Nunito', sans-serif;
+    -webkit-tap-highlight-color: transparent;
+}
+
+html {
+    scroll-behavior: smooth;
+}
+
+body {
+    background-color: #cbd5e1; /* Background outside the app container */
+    color: var(--text-main);
+    line-height: 1.5;
+    overflow-x: hidden;
+    -webkit-font-smoothing: antialiased;
+}
+
+body.dark-mode {
+    background-color: #020617;
+}
+
+.app-container {
+    max-width: 480px;
+    margin: 0 auto;
+    background-color: var(--bg-color);
+    min-height: 100vh;
+    position: relative;
+    overflow-x: hidden;
+    box-shadow: 0 0 40px rgba(0,0,0,0.1);
+    display: flex;
+    flex-direction: column;
+}
+
+body.dark-mode .app-container {
+    box-shadow: 0 0 40px rgba(0,0,0,0.5);
+}
+
+/* Hide Scrollbars globally for clean mobile feel */
+::-webkit-scrollbar {
+    display: none;
+}
+* {
+    scrollbar-width: none; /* Firefox */
+}
+
+/* ==========================================
+   📱 SCREEN ROUTING & TRANSITIONS
+   ========================================== */
+.screen {
+    display: none;
+    width: 100%;
+    min-height: 100vh;
+    background-color: var(--bg-color);
+    animation: fadeSlideUp 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.screen.active {
+    display: block;
+}
+
+@keyframes fadeSlideUp {
+    from { 
+        opacity: 0; 
+        transform: translateY(15px); 
+    }
+    to { 
+        opacity: 1; 
+        transform: translateY(0); 
+    }
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+/* ==========================================
+   🔙 GLOBAL UTILITIES & HEADERS
+   ========================================== */
+.back-btn {
+    font-size: 22px;
+    cursor: pointer;
+    transition: transform 0.2s ease;
+    display: inline-block;
+}
+
+.back-btn:active {
+    transform: scale(0.85);
+}
+
+/* Prevent accidental text selection on UI elements */
+button, .shop-card, .nav-item, .category-block, .bb-product-card, .flash-tag, .cart-toggle-btn {
+    user-select: none;
+    -webkit-user-select: none;
+}
+
+/* Loading Skeletons */
+.skeleton {
+    background: #e2e8f0;
+    background: linear-gradient(110deg, #e2e8f0 8%, #f1f5f9 18%, #e2e8f0 33%);
+    background-size: 200% 100%;
+    animation: 1.5s shine linear infinite;
+    border-radius: var(--radius-md);
+}
+body.dark-mode .skeleton {
+    background: #1e293b;
+    background: linear-gradient(110deg, #1e293b 8%, #334155 18%, #1e293b 33%);
+    background-size: 200% 100%;
+    animation: 1.5s shine linear infinite;
+}
+
+@keyframes shine {
+    to { background-position-x: -200%; }
+}
+
+/* Global input overrides for dark mode syncing */
+body.dark-mode input, 
+body.dark-mode textarea, 
+body.dark-mode select {
+    background-color: #1e293b !important;
+    color: #f8fafc !important;
+    border-color: #334155 !important;
+}
+
+body.dark-mode input::placeholder, 
+body.dark-mode textarea::placeholder {
+    color: #64748b !important;
+}
+
+/* Glassmorphism utility for sticky headers */
+.glass-header {
+    background: var(--glass-bg);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border-bottom: 1px solid var(--border-color);
+}
+

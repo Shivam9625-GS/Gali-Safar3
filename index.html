@@ -1,0 +1,1527 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Gali-Safar - User App</title>
+
+    <link rel="stylesheet" href="css/global.css">
+    <link rel="stylesheet" href="css/components.css">
+
+    <!-- 🌟 SUPER APP FOLDER TABS CSS (AS PER SCREENSHOT) -->
+    <style>
+        /* Tab Background Area */
+        .super-app-tabs-container {
+            background: #f4f6f9; /* Light grey base from screenshot */
+            padding: 15px 15px 0 15px;
+            display: flex;
+            overflow-x: auto;
+            scrollbar-width: none;
+            -webkit-overflow-scrolling: touch;
+            border-bottom: 1px solid #e2e8f0;
+            gap: 5px;
+        }
+        .super-app-tabs-container::-webkit-scrollbar {
+            display: none;
+        }
+        
+        /* Individual Folder Tab */
+        .folder-tab {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-end;
+            min-width: 95px;
+            padding: 12px 10px 10px;
+            position: relative;
+            cursor: pointer;
+            border-bottom: none;
+            transition: 0.2s ease;
+        }
+        .folder-tab-icon {
+            font-size: 32px;
+            margin-bottom: 8px;
+            transition: transform 0.2s;
+        }
+        .folder-tab-text {
+            font-size: 12px;
+            font-weight: 800;
+            color: #64748b;
+            white-space: nowrap;
+        }
+
+        /* Active Tab Styling (Screenshot Match) */
+        .folder-tab.active {
+            background: #ffffff;
+            border-top: 1.5px solid #cbd5e1;
+            border-left: 1.5px solid #cbd5e1;
+            border-right: 1.5px solid #cbd5e1;
+            border-radius: 20px 20px 0 0;
+            margin-bottom: -1px; /* Overlaps the bottom border perfectly */
+            z-index: 10;
+        }
+        .folder-tab.active .folder-tab-text {
+            color: #1e293b;
+        }
+        .folder-tab.active .folder-tab-icon {
+            transform: scale(1.1);
+        }
+
+        /* Fulfillment Pills */
+        .fulfillment-bar {
+            padding: 10px 20px 0;
+            display: flex;
+            gap: 10px;
+            overflow-x: auto;
+            scrollbar-width: none;
+        }
+        .fulfillment-bar::-webkit-scrollbar { display: none; }
+        .f-pill {
+            padding: 6px 16px;
+            background: #f1f5f9;
+            border: 1px solid #cbd5e1;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 800;
+            color: #475569;
+            white-space: nowrap;
+            cursor: pointer;
+        }
+        .f-pill.active {
+            background: #0f172a;
+            color: #ffffff;
+            border-color: #0f172a;
+        }
+
+        /* Coming Soon Layout */
+        .coming-soon-box {
+            text-align: center;
+            padding: 50px 20px;
+            background: #ffffff;
+            border-radius: 16px;
+            margin: 20px;
+            border: 1px dashed #cbd5e1;
+        }
+    </style>
+</head>
+<body id="main-body">
+
+<div id="vibe-loader" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(255,255,255,0.95); z-index:15000; justify-content:center; align-items:center; flex-direction:column; backdrop-filter:blur(5px);">
+    <div class="basket-anim-container" style="position:relative; width:100px; height:100px; display:flex; justify-content:center; align-items:center;">
+        <div id="burst-basket" style="font-size:70px; z-index:5;">🧺</div>
+        <div class="burst-item" id="b-item-1" style="--tx: -50px; --ty: -80px; font-size:30px; position:absolute; top:10px; left:35px; opacity:0; pointer-events:none;">🍎</div>
+        <div class="burst-item" id="b-item-2" style="--tx: 0px; --ty: -100px; font-size:30px; position:absolute; top:10px; left:35px; opacity:0; pointer-events:none;">🥦</div>
+        <div class="burst-item" id="b-item-3" style="--tx: 50px; --ty: -80px; font-size:30px; position:absolute; top:10px; left:35px; opacity:0; pointer-events:none;">🥛</div>
+    </div>
+    <h3 style="color:#ff6b00; font-weight:900; margin-top:20px; font-size:18px;">Fetching Fresh Items...</h3>
+</div>
+
+<div id="offline-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: white; z-index: 99999; flex-direction: column; justify-content: center; align-items: center; text-align: center;">
+    <div style="font-size: 80px; margin-bottom: 20px;">📶</div>
+    <h2 style="color: #1e293b; font-weight: 900; margin-bottom: 10px;">No Internet Connection</h2>
+    <p style="color: #64748b; font-size: 14px; font-weight: 600; margin-bottom: 25px;">Gali-Safar chalane ke liye data on karein.</p>
+    <button class="primary-btn" style="width: auto; padding: 12px 30px;" onclick="checkInternetConnection()">Retry 🔄</button>
+</div>
+
+<div class="app-container" id="app-main-container">
+
+    <input type="file" id="hidden-parchi-input" accept="image/*" style="display:none;" onchange="processParchiScan(event)">
+    <input type="file" id="profile-pic-upload" accept="image/*" style="display:none;" onchange="updateProfilePicDirectly(event)">
+
+    <!-- ... Other modals (Udhar Unapproved, MaxSaver, Voice, Toast, Login/Auth) preserved ... -->
+    <div id="modal-udhar-unapproved" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 10000; justify-content: center; align-items: center; transition: opacity 0.3s;">
+        <div class="max-anim-content" style="position: relative; border-color: #ef4444;">
+            <div style="position: absolute; top: -10px; right: -10px; background: white; color: #94a3b8; width: 35px; height: 35px; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-size: 18px; font-weight: 800; cursor: pointer; box-shadow: 0 2px 5px rgba(0,0,0,0.2); border: 2px solid #e2e8f0;" onclick="document.getElementById('modal-udhar-unapproved').style.display='none'">✕</div>
+            <div style="font-size: 65px; margin-bottom: 10px;">🔒</div>
+            <h1 style="font-size: 24px; font-weight: 900; color: #ef4444; line-height: 1.2;">UDHAR NOT<br>APPROVED YET</h1>
+            <p style="font-size: 14px; margin-top:10px; font-weight: 600; color: #64748b;">Aapki Udhar request abhi dukaandaar ne approve nahi ki hai.</p>
+            <div style="background: #fee2e2; color: #b91c1c; padding: 6px 18px; border-radius: 50px; margin-top: 15px; font-size: 13px; font-weight: 800; display: inline-block; border: 1px solid #fca5a5;">USE UPI OR CASH</div>
+            <button class="primary-btn" style="margin-top:20px; background:var(--primary);" onclick="document.getElementById('modal-udhar-unapproved').style.display='none'; switchNav('screen-cart');">Okay, Pay Online ➔</button>
+        </div>
+    </div>
+
+    <div id="max-mode-animation">
+        <div class="max-anim-content" style="position: relative;">
+            <div style="position: absolute; top: -10px; right: -10px; background: white; color: #94a3b8; width: 35px; height: 35px; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-size: 18px; font-weight: 800; cursor: pointer; box-shadow: 0 2px 5px rgba(0,0,0,0.2); border: 2px solid #e2e8f0;" onclick="closeMaxxSaverPopup()">✕</div>
+            <div style="font-size: 65px; margin-bottom: 10px;">✨</div>
+            <h1 style="font-size: 26px; font-weight: 900; color: #16a34a; line-height: 1.2;">MAXXSAVER<br>ACTIVATED</h1>
+            <p style="font-size: 14px; margin-top:10px; font-weight: 600; color: #64748b;">Multi-vendor deals detected!<br>Switching to best savings.</p>
+            <div style="background: #f0fdf4; color: #15803d; padding: 6px 18px; border-radius: 50px; margin-top: 15px; font-size: 13px; font-weight: 800; display: inline-block; border: 1px solid #bbf7d0;">STORE PICKUP ONLY</div>
+            <div style="margin-top: 25px; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                <input type="checkbox" id="no-show-maxx" style="width: 18px; height: 18px; cursor: pointer; accent-color: #16a34a;">
+                <label for="no-show-maxx" style="font-size: 13px; color: #64748b; cursor: pointer; font-weight: 600;">Don't show this again</label>
+            </div>
+        </div>
+    </div>
+
+    <div id="voice-overlay">
+        <div class="pulse-ring">🎤</div>
+        <h3 id="overlay-title" style="margin-top:20px; font-weight:800; font-size: 22px;">Listening...</h3>
+        <p id="overlay-msg" style="font-size:13px; color:#cbd5e1; margin-top: 5px;">Boliye, kya chahiye?</p>
+    </div>
+
+    <div id="toast">Item Added! ✅</div>
+
+    <div id="screen-login" class="screen active" style="background: linear-gradient(180deg, #ffede1 0%, #ffffff 100%); position: relative;">
+        <div class="login-header" style="padding: 60px 20px; text-align: center;">
+            <div style="font-size: 65px; margin-bottom: 10px;">🛵</div>
+            <h1 style="color: #ff6b00; font-weight: 900; font-size: 38px;">Gali-Safar</h1>
+            <p style="color: #64748b; font-size: 15px; font-weight: 600;">Sasta Daam, Pados ki Dukaan</p>
+        </div>
+        <div class="auth-bottom-sheet" id="auth-sheet" style="position: absolute; bottom: 0; left: 0; width: 100%; background: #ffffff; border-radius: 30px 30px 0 0; padding: 35px 25px; box-shadow: 0 -10px 25px rgba(0,0,0,0.08); transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);">
+            <div id="login-step-1">
+                <h3 style="font-size: 20px; font-weight: 900; color: #1e293b; margin-bottom: 20px;">Login / Sign Up</h3>
+                <div style="display: flex; align-items: center; border: 1.5px solid #e2e8f0; border-radius: 14px; padding: 12px 18px; margin-bottom: 25px; background: #f8fafc;">
+                    <span style="font-weight: 800; margin-right: 12px; color: #475569; font-size: 16px;">+91</span>
+                    <input type="tel" id="mobile" placeholder="Enter Mobile Number" maxlength="10" style="border: none; outline: none; font-size: 18px; font-weight: 600; flex: 1; background: transparent; letter-spacing: 1px; color: #1e293b;" oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 10);">
+                </div>
+                <button class="primary-btn" style="width: 100%; background: #ff6b00; padding: 16px; border-radius: 14px; font-size: 16px; box-shadow: 0 4px 15px rgba(255, 107, 0, 0.3);" onclick="document.getElementById('auth-sheet').style.transform='translateY(-20px)'; setTimeout(()=>document.getElementById('auth-sheet').style.transform='translateY(0)', 200); sendOTP()">Continue ➔</button>
+            </div>
+            <div id="login-step-2" style="display: none;">
+                <div style="display: inline-flex; align-items: center; background: #f1f5f9; padding: 8px 16px; border-radius: 20px; font-size: 14px; font-weight: 800; color: #475569; margin-bottom: 25px; cursor: pointer; border: 1px solid #e2e8f0;" onclick="editNumber()">
+                    <span id="display-otp-number">+91 XXXXX XXXXX</span> &nbsp;<span style="font-size: 12px;">✏️ Edit</span>
+                </div>
+                <h3 style="font-size: 20px; font-weight: 900; color: #1e293b; margin-bottom: 20px;">Enter 6-digit OTP 🔒</h3>
+                <div class="otp-container" id="otp-boxes" style="display: flex; justify-content: space-between; margin-bottom: 30px; gap: 8px;">
+                    <input type="tel" class="otp-box" maxlength="1" pattern="\d*" style="width: 100%; height: 55px; text-align: center; font-size: 24px; font-weight: 800; border: 1.5px solid #cbd5e1; border-radius: 12px; outline: none; background: white; color: #1e293b;" onkeyup="if(this.value.length==1) this.nextElementSibling?.focus()">
+                    <input type="tel" class="otp-box" maxlength="1" pattern="\d*" style="width: 100%; height: 55px; text-align: center; font-size: 24px; font-weight: 800; border: 1.5px solid #cbd5e1; border-radius: 12px; outline: none; background: white; color: #1e293b;" onkeyup="if(this.value.length==1) this.nextElementSibling?.focus()">
+                    <input type="tel" class="otp-box" maxlength="1" pattern="\d*" style="width: 100%; height: 55px; text-align: center; font-size: 24px; font-weight: 800; border: 1.5px solid #cbd5e1; border-radius: 12px; outline: none; background: white; color: #1e293b;" onkeyup="if(this.value.length==1) this.nextElementSibling?.focus()">
+                    <input type="tel" class="otp-box" maxlength="1" pattern="\d*" style="width: 100%; height: 55px; text-align: center; font-size: 24px; font-weight: 800; border: 1.5px solid #cbd5e1; border-radius: 12px; outline: none; background: white; color: #1e293b;" onkeyup="if(this.value.length==1) this.nextElementSibling?.focus()">
+                    <input type="tel" class="otp-box" maxlength="1" pattern="\d*" style="width: 100%; height: 55px; text-align: center; font-size: 24px; font-weight: 800; border: 1.5px solid #cbd5e1; border-radius: 12px; outline: none; background: white; color: #1e293b;" onkeyup="if(this.value.length==1) this.nextElementSibling?.focus()">
+                    <input type="tel" class="otp-box" maxlength="1" pattern="\d*" style="width: 100%; height: 55px; text-align: center; font-size: 24px; font-weight: 800; border: 1.5px solid #cbd5e1; border-radius: 12px; outline: none; background: white; color: #1e293b;">
+                </div>
+                <button class="add-to-cart-btn" style="width: 100%; background: #ff6b00; padding: 16px; border-radius: 14px; font-size: 16px; box-shadow: 0 4px 15px rgba(255, 107, 0, 0.3);" onclick="verifyOTP()">Verify & Login 🚀</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="screen-register" class="screen" style="padding: 20px; display: flex; flex-direction: column; justify-content: center; min-height: 100vh; background: white;">
+        <div style="text-align: center; margin-bottom: 35px;">
+            <h2 style="color: #1e293b; font-weight: 800; font-size: 26px;">Gali-Safar pe Welcome! 🥳</h2>
+            <p style="font-size: 14px; color: #64748b;">Mubarak ho! Aapko ₹20 ka free shopping coin mil gaya hai. <br>Bas jaldi se apni details fill karein aur use karein.</p>
+        </div>
+        <input type="text" id="user-name" class="login-input" placeholder="Aapka Poora Naam" required>
+        <textarea id="user-address" class="login-input" placeholder="Flat No / House No" style="height: 70px; resize: none;" required></textarea>
+        <button class="btn-outline" style="margin-bottom: 10px; background: #eff6ff; border-color: #bfdbfe; color: #2563eb;" id="loc-btn" onclick="fetchLocation()">
+            📍 Get Current Location (GPS)
+        </button>
+        <p id="loc-status" style="font-size: 11px; color: var(--success); font-weight: 800; margin-bottom: 30px; min-height: 15px; text-align: center;"></p>
+        <button class="primary-btn" onclick="completeRegistration()">Start Shopping ➔</button>
+    </div>
+
+    <!-- MAIN HOME SCREEN -->
+    <div id="screen-home" class="screen">
+        
+        <!-- UNIVERSAL TOP HEADER -->
+        <div class="header" style="border-bottom-left-radius:0; border-bottom-right-radius:0; padding-bottom:15px; box-shadow:none;">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+                <div>
+                    <h2 id="welcome-msg" style="font-size: 22px;">Gali-Safar ></h2>
+                    <div class="location-picker" id="header-loc" style="background:transparent; padding:0; margin-top:2px;">To Delhi: Pitampura, Delhi...</div>
+                </div>
+                <div style="display: flex; gap: 12px; align-items: center;">
+                    <div class="coin-badge" onclick="switchNav('screen-coins')">
+                        <span style="font-size:16px;">🪙</span>
+                        <span id="top-coin-balance">0</span>
+                    </div>
+                    <div id="home-profile-pic" style="font-size: 26px; cursor: pointer; background: rgba(255,255,255,0.2); width: 45px; height: 45px; border-radius: 50%; display: flex; justify-content: center; align-items: center; overflow: hidden;" onclick="switchNav('screen-profile', 'nav-profile')">👤</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 🌟 SCREENSHOT PERFECT FOLDER TABS -->
+        <div class="super-app-tabs-container" id="mainFolderTabs">
+            <div class="folder-tab active" onclick="switchVerticalUniverse('kirana', this)">
+                <span class="folder-tab-icon">🛒</span>
+                <span class="folder-tab-text">Kirana</span>
+            </div>
+            <div class="folder-tab" onclick="switchVerticalUniverse('food', this)">
+                <span class="folder-tab-icon">🍲</span>
+                <span class="folder-tab-text">Local Food</span>
+            </div>
+            <div class="folder-tab" onclick="switchVerticalUniverse('stationery', this)">
+                <span class="folder-tab-icon">📚</span>
+                <span class="folder-tab-text">Stationery Hub</span>
+            </div>
+            <div class="folder-tab" onclick="switchVerticalUniverse('services', this)">
+                <span class="folder-tab-icon">🛠️</span>
+                <span class="folder-tab-text">Repairs & More</span>
+            </div>
+            <div class="folder-tab" onclick="switchVerticalUniverse('night', this)">
+                <span class="folder-tab-icon">🌙</span>
+                <span class="folder-tab-text">Night Store</span>
+            </div>
+        </div>
+
+        <!-- 1. VERTICAL: KIRANA STORE (DEFAULT ACTIVE) -->
+        <div id="vertical-kirana" class="vertical-universe-view" style="display: block; background: white;">
+            
+            <div class="sticky-top-bar" style="position: sticky; top: 0; background: white; padding-bottom: 5px; z-index: 100; box-shadow: 0 4px 10px rgba(0,0,0,0.02);">
+                <div class="search-container-mic" style="margin-top: 10px; padding: 0 20px;">
+                    <input type="text" class="search-box" style="border: 1.5px solid #e2e8f0; background: #f8fafc; color: #1e293b; width: 100%; padding-right: 90px;" placeholder="Search Khula Aata, Maida, Oil..." onclick="switchNav('screen-search', 'nav-search')" readonly>
+                    <div class="scan-btn" style="position: absolute; right: 65px; top: 50%; transform: translateY(-50%); font-size: 22px; cursor: pointer;" onclick="scanTarget='cart'; document.getElementById('hidden-parchi-input').click()">📄</div>
+                    <div class="mic-btn" style="position: absolute; right: 25px; top: 50%; transform: translateY(-50%); font-size: 22px; cursor: pointer;" onclick="startVoiceSearch('home')">🎤</div>
+                </div>
+
+                <!-- KIRANA FULFILLMENT PILLS (NEW DESIGN) -->
+                <div class="fulfillment-bar">
+                    <div class="f-pill active" onclick="filterKiranaFulfillment('all', this)">✨ All Stores</div>
+                    <div class="f-pill" onclick="filterKiranaFulfillment('delivery', this)">🛵 Home Delivery</div>
+                    <div class="f-pill" onclick="filterKiranaFulfillment('pickup', this)">🏬 Store Pickup</div>
+                </div>
+            </div>
+
+            <!-- PROMO BANNER AS PER SCREENSHOT -->
+            <div id="promo-banners-container" class="promo-banner-container" style="padding: 15px 20px 5px; display: flex; gap: 15px; overflow-x: auto; scrollbar-width: none;"></div>
+            <div class="slider-dots" id="banner-dots">
+                <div class="dot active"></div><div class="dot"></div><div class="dot"></div>
+            </div>
+
+            <div id="loyalty-tracker-container" style="margin-top:10px;">
+                <div style="flex: 1;">
+                    <div style="display: flex; justify-content: space-between; font-size: 11px; font-weight: 800; color: #c2410c; margin-bottom: 6px;">
+                        <span>Weekly Target: ₹1000</span>
+                        <span id="loyalty-progress-text">₹0/₹1000</span>
+                    </div>
+                    <div style="background: #ffedd5; border-radius: 10px; height: 6px; width: 100%; overflow: hidden; border: 1px solid #fdba74;">
+                        <div id="loyalty-progress-bar" style="background: #f97316; height: 100%; width: 0%; border-radius: 10px; transition: width 0.5s ease-in-out;"></div>
+                    </div>
+                    <p style="font-size: 10px; color: #9a3412; margin-top: 6px; font-weight: 800;" id="loyalty-motivation-text">₹1000 ka order karo aur 5% Extra Coins pao! 🪙</p>
+                </div>
+            </div>
+
+            <div id="home-reorder-section" style="display: none; animation: fadeIn 0.5s ease-in;">
+                <div class="section-title">Reorder Your Daily Essentials 🔄</div>
+                <div class="h-scroll" id="home-reorder-grid"></div>
+            </div>
+
+            <div id="substitute-approval-section" class="substitute-box" style="display:none;"></div>
+
+            <!-- NEARBY SHOPS AS PER SCREENSHOT -->
+            <div class="section-title" id="lang-shops">Aas-Paas Ki Dukaanein 🏪 <span onclick="switchNav('screen-all-shops')">Show all</span></div>
+            <div class="h-scroll" id="home-shop-list"></div>
+
+            <div class="section-title">Fresh Items 🥦 <span onclick="switchNav('screen-search', 'nav-search')">See all</span></div>
+            <div class="category-grid fresh-3-col" id="home-fresh-grid" style="padding: 0 20px 20px;">
+                <div class="category-block" onclick="triggerBasketBurst('Vegetables')">
+                    <img src="data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='150' height='150'%3E%3Crect width='150' height='150' fill='%23dcfce7'/%3E%3Ctext x='50%25' y='52%25' dominant-baseline='middle' text-anchor='middle' font-size='54'%3E%F0%9F%8D%8C%3C/text%3E%3C/svg%3E" loading="lazy" alt="Vegetables">
+                    <h4>Vegetables</h4>
+                </div>
+                <div class="category-block" onclick="triggerBasketBurst('Fruits')">
+                    <img src="data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='150' height='150'%3E%3Crect width='150' height='150' fill='%23fef3c7'/%3E%3Ctext x='50%25' y='52%25' dominant-baseline='middle' text-anchor='middle' font-size='54'%3E%F0%9F%8D%8A%3C/text%3E%3C/svg%3E" loading="lazy" alt="Fruits">
+                    <h4>Fruits</h4>
+                </div>
+                <div class="category-block" onclick="triggerBasketBurst('Dairy & Eggs')">
+                    <img src="data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='150' height='150'%3E%3Crect width='150' height='150' fill='%23e0f2fe'/%3E%3Ctext x='50%25' y='52%25' dominant-baseline='middle' text-anchor='middle' font-size='54'%3E%F0%9F%8D%9A%3C/text%3E%3C/svg%3E" loading="lazy" alt="Dairy & Eggs">
+                    <h4>Dairy & Eggs</h4>
+                </div>
+            </div>
+
+            <div class="section-title">Grocery & Kitchen 🌾 <span onclick="switchNav('screen-search', 'nav-search')">See all</span></div>
+            <div class="category-grid" id="home-grocery-grid"></div>
+
+            <div class="section-title">Snacks & Drinks 🍹 <span onclick="switchNav('screen-search', 'nav-search')">See all</span></div>
+            <div class="category-grid" id="home-snacks-grid"></div>
+
+            <div class="section-title">Beauty & Personal Care 💄 <span onclick="switchNav('screen-search', 'nav-search')">See all</span></div>
+            <div class="category-grid" id="home-beauty-grid"></div>
+
+            <div class="section-title">Home & Lifestyle 🧹 <span onclick="switchNav('screen-search', 'nav-search')">See all</span></div>
+            <div class="category-grid" id="home-lifestyle-grid"></div>
+
+            <div class="section-title">Deals For You 🎁</div>
+            <div class="search-grid" id="home-random-items" style="padding-bottom: 30px;"></div>
+        </div>
+
+        <!-- 2. VERTICAL: LOCAL STREET FOOD -->
+        <div id="vertical-food" class="vertical-universe-view" style="display: none; background: white; padding: 20px; min-height: 80vh;">
+            <div class="coming-soon-box">
+                <span class="coming-soon-badge-tag">JALD AA RAHA HAI 🚀</span>
+                <div style="font-size: 50px; margin: 10px 0;">🍲</div>
+                <h3 style="font-size: 18px; font-weight: 900; color: #1e293b;">Local Street Food</h3>
+                <p style="font-size: 12px; color: #64748b; font-weight: 600; margin-top: 5px;">Pados ki famous chaat, rolls aur momos stalls ab seedha aapke ghar!</p>
+            </div>
+        </div>
+
+        <!-- 3. VERTICAL: STATIONERY HUB -->
+        <div id="vertical-stationery" class="vertical-universe-view" style="display: none; background: white; padding: 20px; min-height: 80vh;">
+            <div class="coming-soon-box">
+                <span class="coming-soon-badge-tag" style="background:#f3e8ff; color:#7e22ce; border-color:#d8b4fe;">P2P + B2C HUB 📚</span>
+                <div style="font-size: 50px; margin: 10px 0;">📓</div>
+                <h3 style="font-size: 18px; font-weight: 900; color: #1e293b;">Stationery & Book Hub</h3>
+                <p style="font-size: 12px; color: #64748b; font-weight: 600; margin-top: 5px;">School-College stationery, instant printouts aur student-to-student book exchange!</p>
+            </div>
+        </div>
+
+        <!-- 4. VERTICAL: REPAIRS & MORE -->
+        <div id="vertical-services" class="vertical-universe-view" style="display: none; background: white; padding: 20px; min-height: 80vh;">
+            <div class="coming-soon-box">
+                <span class="coming-soon-badge-tag" style="background:#e0f2fe; color:#0284c7; border-color:#7dd3fc;">COMING SOON 🛠️</span>
+                <div style="font-size: 50px; margin: 10px 0;">⚡</div>
+                <h3 style="font-size: 18px; font-weight: 900; color: #1e293b;">Repairs & More Hub</h3>
+                <p style="font-size: 12px; color: #64748b; font-weight: 600; margin-top: 5px;">Pados ke verified electrician, plumber aur mechanics ab direct aapke ghar!</p>
+            </div>
+        </div>
+
+        <!-- 5. VERTICAL: GALI NIGHT STORE -->
+        <div id="vertical-night" class="vertical-universe-view" style="display: none; background: white; padding: 20px; min-height: 80vh;">
+            <div class="coming-soon-box" style="background: #1e1b4b; border-color: #312e81;">
+                <span class="coming-soon-badge-tag" style="background:#4338ca; color:#e0e7ff; border-color:#6366f1;">11 PM - 5 AM 🌙</span>
+                <div style="font-size: 50px; margin: 10px 0;">🦉</div>
+                <h3 style="font-size: 18px; font-weight: 900; color: #ffffff;">Gali Night Store</h3>
+                <p style="font-size: 12px; color: #c7d2fe; font-weight: 600; margin-top: 5px;">Late night cravings, chips, drinks, aur urgent pharmacy essentials seedha ghar par!</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- SCREENS & MODALS PRESERVED AS ORIGINAL (NO DATA MISSED) -->
+    <div id="screen-all-shops" class="screen" style="background: #f8fafc; min-height: 100vh;">
+        <div class="sticky-top-bar" style="padding-top: 0;">
+            <div class="header" style="padding-bottom: 20px; border-radius: 0; background: white; color: #1e293b; box-shadow: none; border-bottom: none;">
+                <div style="display:flex; align-items:center;">
+                    <span class="back-btn" onclick="goBack()" style="color: #1e293b;">⬅️</span>
+                    <h2 style="font-size: 20px;">Sabhi Dukanen</h2>
+                </div>
+            </div>
+            <div class="search-container-mic" style="margin-top: -10px;">
+                <input type="text" id="all-shops-search" class="search-box" style="border: 1px solid #e2e8f0; background: #f8fafc;" placeholder="Dukaan dhundhein..." onkeyup="filterAllShops()">
+                <div class="mic-btn" style="right: 30px;" onclick="startVoiceSearch('all-shops')">🎤</div>
+            </div>
+        </div>
+        <div id="all-shops-list" style="padding-bottom: 90px;"></div>
+    </div>
+
+    <div id="screen-category-split" class="screen" style="background: white;">
+        <div class="header" style="padding-bottom: 15px; border-radius: 0; box-shadow: none; position: sticky; top: 0; z-index: 100; background: white; color: #1e293b; border-bottom: 1px solid #e2e8f0;">
+            <div style="display:flex; align-items:center; gap: 15px;">
+                <span class="back-btn" onclick="goBack()">⬅️</span>
+                <h2 style="font-size: 20px;" id="split-cat-title">Category Name</h2>
+            </div>
+        </div>
+        <div class="split-container">
+            <div class="left-menu" id="split-left-menu"></div>
+            <div class="right-items" id="split-right-items" onscroll="handleSplitScroll()"></div>
+        </div>
+    </div>
+
+    <div id="screen-saved-vendors" class="screen" style="background: #f8fafc; min-height: 100vh;">
+        <div class="header" style="padding-bottom: 20px; border-radius: 0; background: white; color: #1e293b; box-shadow: none; position: sticky; top: 0; z-index: 100; border-bottom: 1px solid #e2e8f0;">
+            <div style="display:flex; align-items:center;">
+                <span class="back-btn" onclick="goBack()" style="color: #1e293b;">⬅️</span>
+                <h2 style="font-size: 20px;">Saved Vendors ⭐</h2>
+            </div>
+        </div>
+        <div id="saved-vendors-list" style="padding: 20px; padding-bottom: 90px;"></div>
+    </div>
+
+    <div id="screen-saved-items" class="screen" style="background: #f8fafc; min-height: 100vh;">
+        <div class="header" style="padding-bottom: 20px; border-radius: 0; background: white; color: #1e293b; box-shadow: none; position: sticky; top: 0; z-index: 100; border-bottom: 1px solid #e2e8f0;">
+            <div style="display:flex; align-items:center;">
+                <span class="back-btn" onclick="goBack()" style="color: #1e293b;">⬅️</span>
+                <h2 style="font-size: 20px;">Saved Items ❤️</h2>
+            </div>
+        </div>
+        <div id="saved-items-list" class="search-grid" style="padding: 20px; padding-bottom: 90px;"></div>
+    </div>
+
+    <div id="screen-profile" class="screen p-base-bg">
+        <div class="p-header-top">
+            <span class="back-btn" onclick="goBack()">⬅</span>
+        </div>
+
+        <div class="p-avatar-sec">
+            <button class="p-edit-btn" onclick="openEditProfileModal()">Edit</button>
+            <div class="p-avatar" id="profile-avatar-icon" onclick="document.getElementById('profile-pic-upload').click()" style="cursor: pointer;">👤</div>
+            <img id="profile-avatar-img" src="" style="width: 80px; height: 80px; border-radius: 50%; object-fit: cover; border: 2px solid #cbd5e1; display: none; margin: 0 auto 10px; cursor: pointer;" onclick="document.getElementById('profile-pic-upload').click()">
+            <h2 class="p-name" id="display-name">Your account</h2>
+            <p class="p-phone" id="display-phone">8700431787</p>
+        </div>
+
+        <div class="p-action-grid">
+            <div class="p-action-card" onclick="switchNav('screen-orders', 'nav-orders')">
+                <div class="p-action-icon">📦</div>
+                <div class="p-action-text">Orders</div>
+            </div>
+            <div class="p-action-card" onclick="switchNav('screen-khata', 'nav-khata')">
+                <div class="p-action-icon" id="profile-udhar-val" style="font-size: 18px; font-weight: 800; color: var(--danger); margin-bottom: 8px;">₹0</div>
+                <div class="p-action-text">Udhar<br><span style="font-size:8px; color:var(--danger);">No dues</span></div>
+            </div>
+            <div class="p-action-card" onclick="switchNav('screen-coins')">
+                <div class="p-action-icon" id="profile-coin-val" style="font-size: 18px; font-weight: 800; color: #d97706; margin-bottom: 8px;">🪙 0</div>
+                <div class="p-action-text">Coins</div>
+            </div>
+        </div>
+
+        <div class="p-box" style="padding: 20px; margin: 0 20px 25px; border-radius: 16px; border: 1px solid #e2e8f0; display:flex; justify-content:space-between; align-items:center;">
+            <div class="p-box-left">
+                <span style="font-size: 22px; color: #9ca3af;">🌙</span>
+                <span class="p-box-title">Appearance</span>
+            </div>
+            <div style="display:flex; align-items:center; gap:12px;">
+                <span id="theme-status-text" style="font-size:13px; font-weight:800; color:#9ca3af;">LIGHT</span>
+                <label class="switch">
+                    <input type="checkbox" id="theme-checkbox" onchange="toggleAppTheme()">
+                    <span class="slider"></span>
+                </label>
+            </div>
+        </div>
+
+        <div class="p-section">
+            <h3 class="p-sec-title">Your information</h3>
+            <div class="p-list-card">
+                <div class="p-list-item" onclick="openEditProfileModal()">
+                    <div class="p-list-left"><span class="p-list-icon">📍</span><span class="p-list-text">Address book</span></div>
+                    <span class="p-list-arrow">❯</span>
+                </div>
+                <div class="p-list-item" onclick="switchNav('screen-daily-dash')">
+                    <div class="p-list-left">
+                        <span class="p-list-icon">📅</span>
+                        <div style="display:flex; flex-direction:column;">
+                            <span class="p-list-text">Daily Schedule</span>
+                            <span style="font-size:10px; color:var(--success); font-weight:800; margin-top:2px;" id="profile-daily-badge">🟢 Active Lists</span>
+                        </div>
+                    </div>
+                    <span class="p-list-arrow">❯</span>
+                </div>
+                <div class="p-list-item" onclick="switchNav('screen-monthly-dash')">
+                    <div class="p-list-left">
+                        <span class="p-list-icon">🗓️</span>
+                        <div style="display:flex; flex-direction:column;">
+                            <span class="p-list-text">Monthly Ration List</span>
+                            <span style="font-size:10px; color:var(--success); font-weight:800; margin-top:2px;" id="profile-monthly-badge">🟢 Active Lists</span>
+                        </div>
+                    </div>
+                    <span class="p-list-arrow">❯</span>
+                </div>
+                <div class="p-list-item" onclick="switchNav('screen-saved-vendors')">
+                    <div class="p-list-left"><span class="p-list-icon">🏪</span><span class="p-list-text">Saved Vendors</span></div>
+                    <span class="p-list-arrow">❯</span>
+                </div>
+                <div class="p-list-item" onclick="switchNav('screen-saved-items')">
+                    <div class="p-list-left"><span class="p-list-icon">❤️</span><span class="p-list-text">Saved Items</span></div>
+                    <span class="p-list-arrow">❯</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="p-section">
+            <h3 class="p-sec-title">Payment and coupons</h3>
+            <div class="p-list-card">
+                <div class="p-list-item" onclick="switchNav('screen-khata', 'nav-khata')">
+                    <div class="p-list-left"><span class="p-list-icon">📒</span><span class="p-list-text">Udhar Khata Settings</span></div>
+                    <span class="p-list-arrow">❯</span>
+                </div>
+                <div class="p-list-item" onclick="switchNav('screen-coins')">
+                    <div class="p-list-left"><span class="p-list-icon">🏆</span><span class="p-list-text">Your collected rewards</span></div>
+                    <span class="p-list-arrow">❯</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="p-section">
+            <h3 class="p-sec-title">Gali-Safar Community</h3>
+            <div class="p-list-card">
+                <div class="p-list-item" onclick="shareApp()">
+                    <div class="p-list-left"><span class="p-list-icon">🤝</span><span class="p-list-text">Refer & Earn Coins</span></div>
+                    <span class="p-list-arrow">❯</span>
+                </div>
+                <div class="p-list-item" onclick="window.open('https://wa.me/919625068485?text=' + encodeURIComponent('Hi Gali-Safar Support, I need help!'), '_blank')">
+                    <div class="p-list-left"><span class="p-list-icon">💬</span><span class="p-list-text">Help & Support</span></div> 
+                    <span class="p-list-arrow">❯</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="p-section">
+            <h3 class="p-sec-title">Other Information</h3>
+            <div class="p-list-card">
+                <div class="p-list-item" onclick="logoutUser()">
+                    <div class="p-list-left"><span class="p-list-icon" style="color:var(--danger);">🚪</span><span class="p-list-text" style="color:var(--danger);">Log out</span></div>
+                    <span class="p-list-arrow"></span>
+                </div>
+            </div>
+        </div>
+
+        <div style="text-align: center; color: #4b5563; font-size: 15px; font-weight: 800; padding: 25px 0;">
+            gali-safar<br><span style="font-size: 11px; font-weight: 600;">v17.95.3</span>
+        </div>
+    </div>
+
+    <div id="screen-search" class="screen" style="background: white;">
+        <div class="header" style="padding-bottom: 30px; border-radius: 0; background: white; color: #1e293b; box-shadow: none;">
+            <div style="display:flex; align-items:center;">
+                <span class="back-btn" onclick="goBack()" style="color: #1e293b;">⬅</span>
+                <h2 style="font-size: 20px;" id="lang-compare">Search & Add</h2>
+            </div>
+        </div>
+
+        <div class="search-container-mic" style="margin-top: -15px;">
+            <input type="text" id="main-search-input" class="search-box" style="border: 1px solid #e2e8f0; background: #f8fafc;" placeholder="Search 'Atta', 'Maggi', 'Oil'..." onkeyup="runSearch(event)">
+            <div class="scan-btn" onclick="scanTarget='cart'; document.getElementById('hidden-parchi-input').click()">📄</div>
+            <div class="mic-btn" onclick="startVoiceSearch('search')">🎤</div>
+        </div>
+
+        <div id="search-suggestions" style="padding: 15px 20px;">
+            <h4 class="section-title" style="margin: 0 0 15px 0;">Quick Search (Tapri Special) 🔥</h4>
+            <div class="chip-container" style="padding: 0;">
+                <div class="search-chip" onclick="fillSearch('Khula Aata')">🌾 Khula Aata</div>
+                <div class="search-chip" onclick="fillSearch('Maida')">🥟 Khuli Maida</div>
+                <div class="search-chip" onclick="fillSearch('Oil')">🛢️ Refined Oil (Loose)</div>
+                <div class="search-chip" onclick="fillSearch('Chini')">🍚 Loose Sugar</div>
+            </div>
+        </div>
+
+        <div id="trending-popular-section" style="padding: 0 20px 20px;">
+            <h4 class="section-title" style="margin: 20px 0 15px; font-size: 14px; color: #64748b; text-transform: uppercase;">Trending Searches 📈</h4>
+            <div class="h-scroll" style="padding: 0 0 15px 0; margin: 0; gap: 15px; display: flex;" id="trending-list"></div>
+
+            <h4 class="section-title" style="margin: 20px 0 15px; font-size: 14px; color: #64748b; text-transform: uppercase;">Popular Right Now 🔥</h4>
+            <div class="h-scroll" style="padding: 0 0 15px 0; margin: 0; gap: 15px; display: flex;" id="popular-list"></div>
+        </div>
+
+        <div id="discover-items-section" style="padding: 0 20px 20px;">
+            <h4 class="section-title" style="margin: 0 0 15px; font-size: 14px; color: #64748b; text-transform: uppercase;">Discover New Items 🛒</h4>
+            <div id="discover-item-list" class="search-grid" style="padding: 0; padding-bottom: 50px;"></div>
+        </div>
+
+        <div id="search-item-list" class="search-grid" style="display: none; padding-bottom: 120px;"></div>
+        <div id="compare-results" style="display: none; padding-top: 15px; padding-bottom: 120px; background: #f8fafc; min-height: 100vh;"></div>
+    </div>
+
+    <div id="screen-shop-menu" class="screen" style="padding: 0;" onscroll="if(typeof handleVendorScroll === 'function') handleVendorScroll()">
+        <div style="position: absolute; top: 15px; left: 15px; z-index: 200; background: rgba(255,255,255,0.8); border-radius: 50%; width: 40px; height: 40px; display: flex; justify-content: center; align-items: center; box-shadow: 0 2px 5px rgba(0,0,0,0.2);">
+            <span class="back-btn" style="margin:0; font-size: 20px; color: #1e293b;" onclick="goBack()">⬅</span>
+        </div>
+        <div id="shop-menu-header-container"></div>
+
+        <div class="sticky-top-bar" id="shop-sticky-search-bar" style="display: flex; align-items: center; padding: 10px 20px; gap: 12px; background: white;">
+            <span class="back-btn" style="margin:0; font-size: 20px; color: #1e293b; cursor: pointer;" onclick="goBack()">⬅️</span>
+            <div class="search-container-mic" style="margin-top: 0; padding: 0; flex: 1; position: relative;">
+                <input type="text" class="search-box" style="width: 100%; padding: 12px 85px 12px 15px; border: 1.5px solid #e2e8f0; box-shadow: none;" placeholder="Search in shop..." id="shop-search" onkeyup="filterShopMenu()">
+                <div class="scan-btn" style="right: 45px;" onclick="scanTarget='cart'; document.getElementById('hidden-parchi-input').click()">📄</div>
+                <div class="mic-btn" style="right: 5px;" onclick="startVoiceSearch('shop')">🎤</div>
+            </div>
+        </div>
+
+        <h4 class="section-title" style="margin-top: 15px;">All Items</h4>
+        <div id="shop-menu-items" style="padding-bottom: 40px;"></div>
+    </div>
+
+    <div id="screen-khata" class="screen">
+        <div class="header" style="padding-bottom: 35px;">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+                <div style="display:flex; align-items:center; gap: 15px;">
+                    <span class="back-btn" onclick="goBack()" style="color: white;">⬅️</span>
+                    <h2 style="font-size: 24px;" id="lang-khata">Udhar Khata 📒</h2>
+                </div>
+                <div class="coin-badge" onclick="switchNav('screen-coins')">
+                    <span style="font-size:16px;">🪙</span>
+                    <span id="khata-coin-balance">0</span>
+                </div>
+            </div>
+        </div>
+        <div style="padding: 20px 20px 10px;">
+            <p style="font-size: 12px; font-weight: 800; color: #64748b; margin-bottom: 10px;">NAYA KHATA CHALU KAREIN</p>
+            <div class="search-container-mic" style="margin: 0; position: relative; padding: 0;">
+                <input type="text" id="khata-shop-search" class="search-box" style="border: 1.5px solid #e2e8f0; width: 100%; padding: 15px 20px; border-radius: 15px; outline: none; font-size: 15px; font-weight: 600;" placeholder="Search nearest shop (e.g. Sharma Store)..." onkeyup="searchShopForKhata()">
+            </div>
+            <div id="khata-search-results" style="margin-top: 15px;"></div>
+        </div>
+        <div style="padding: 15px 0;">
+            <h4 class="section-title" id="lang-active-khata">Active Khata Books</h4>
+            <div id="khata-cards-container"></div>
+            <div id="khata-kyc-box" style="margin: 0 20px; background: white; padding: 20px; border-radius: 16px; border: 1px dashed var(--primary); text-align: center;"></div>
+        </div>
+    </div>
+
+    <div id="screen-cart" class="screen">
+        <div class="sticky-top-bar" style="padding-top: 0; padding-bottom: 0;">
+            <div class="header" style="background: white; color: #1e293b; border-bottom: none; box-shadow: none; padding-bottom: 10px;">
+                <div style="display:flex; align-items:center; gap: 15px;">
+                    <span class="back-btn" onclick="goBack()" style="color: #1e293b;">⬅️</span>
+                    <h2 style="font-size: 24px;" id="lang-cart">Your Cart 🛒</h2>
+                </div>
+            </div>
+            <div id="cart-category-tabs" style="display:flex; background: #f1f5f9; border-radius: 30px; padding: 4px; margin: 5px 20px; border: 1px solid #e2e8f0;">
+                <div class="cart-toggle-btn active" id="c-tab-kirana" onclick="if(typeof switchCartTab==='function') switchCartTab('kirana')">📦 Kirana</div>
+                <div class="cart-toggle-btn" id="c-tab-fruits" onclick="if(typeof switchCartTab==='function') switchCartTab('fruits')">🍎 Fruits</div>
+                <div class="cart-toggle-btn" id="c-tab-veg" onclick="if(typeof switchCartTab==='function') switchCartTab('veg')">🥦 Veg</div>
+            </div>
+            <div id="cart-toggle-container" class="cart-top-toggle" style="display:none; margin-top: 5px;">
+                <div class="cart-toggle-btn active" id="btn-normal-cart" onclick="setCartMode('normal')">NORMAL CART</div>
+                <div class="cart-toggle-btn maxx" id="btn-maxx-cart" onclick="setCartMode('max')">MAXXSAVER ✨</div>
+            </div>
+            <div style="border-bottom: 1px solid #e2e8f0; margin-top: 10px;"></div>
+        </div>
+        <div id="savings-banner" style="display:none; background:#f0fdf4; border:1px dashed #bbf7d0; margin:10px 20px 20px; padding:15px; border-radius:12px; text-align:center;">
+            <h4 style="font-size:15px; font-weight:800; color:#15803d;">GALI-SAFAR SAVINGS: ₹<span id="total-savings">0</span> OFF! 🥳</h4>
+        </div>
+        <div id="cart-container" style="margin-top: 15px;"></div>
+        <div id="add-more-container" style="padding: 10px 20px; display: none;">
+            <button class="btn-outline" style="background: #f8fafc; width: 100%; border: 2px dashed #94a3b8; color: #475569;" onclick="if(typeof handleAddMoreClick==='function') handleAddMoreClick()">+ Add More Items</button>
+        </div>
+        <div id="checkout-area" style="display: none; padding-top: 15px;">
+            <div id="checkout-warnings"></div>
+            <div id="max-saver-warning" style="display:none; background:#fee2e2; color:#b91c1c; padding:10px; border-radius:8px; font-size:12px; font-weight:800; margin:0 20px 15px; border:1px solid #fca5a5; text-align:center;">Max Saver Active: Only Store Pickup Available.</div>
+            <div class="delivery-toggle" id="delivery-toggle-btns">
+                <div class="del-option active" id="del-home" onclick="setDeliveryMode('home')">🛵 Home Delivery</div>
+                <div class="del-option" id="del-pickup" onclick="setDeliveryMode('pickup')">🚶 Store Pickup</div>
+            </div>
+            <div class="cart-extras" style="margin-bottom: 20px; padding: 20px 0;" id="time-slot-container">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin: 0 20px;">
+                    <h4 style="font-size: 18px; font-weight: 800; color: #1e293b; margin: 0;">Delivery/Pickup Time</h4>
+                    <span id="slot-product-count" style="font-size: 12px; color: #64748b; font-weight: 600;">Items</span>
+                </div>
+                <div class="delivery-slot-btn" style="margin: 15px 20px 0;" onclick="openTimeSlotModal()">
+                    <span id="selected-slot-text" style="font-size: 14px; font-weight: 800; color: var(--success);">Loading slots...</span>
+                    <span style="font-size: 18px; font-weight: 800; color: #1e293b;">⌄</span>
+                </div>
+                <input type="hidden" id="time-slot-policy" value="ASAP">
+            </div>
+            <div class="cart-extras" style="margin-bottom: 20px;">
+                <div style="display:flex; gap:12px; margin: 15px 20px;">
+                    <input type="text" id="coupon-code" class="search-box" style="margin:0; flex: 1; border: 1.5px solid #e2e8f0;" placeholder="Have a coupon?">
+                    <button class="primary-btn" style="width:90px; padding:0; border-radius:10px;" onclick="applyCoupon()">Apply</button>
+                </div>
+                <div style="display :flex; justify-content:space-between; align-items:center; background: #fffbeb; border: 1px dashed #fcd34d; padding: 15px; border-radius: 12px; margin: 0 20px;">
+                    <div style="display:flex; align-items:center; gap:10px;">
+                        <span style="font-size:28px;">🪙</span>
+                        <div>
+                            <h4 style="font-size:14px; font-weight:800; color:#d97706; margin-bottom:0;">Use Gali-Coins</h4>
+                            <p style="font-size:11px; color:#b45309; font-weight:600; margin-bottom:0;">Balance: <span id="cart-coin-bal">0</span></p>
+                        </div>
+                    </div>
+                    <label class="switch">
+                        <input type="checkbox" id="use-coin-cb" onchange="toggleCoinUsage()">
+                        <span class="slider"></span>
+                    </label>
+                </div>
+            </div>
+            <div class="bill-box" id="bill-box-content"></div>
+            <div id="checkout-payment-buttons" style="display: flex; flex-direction: column; gap: 12px; margin: 0 20px 30px;">
+                <div style="display: flex; align-items: center; justify-content: center; margin-bottom: 5px;">
+                    <div style="flex: 1; height: 1px; background: #e2e8f0;"></div>
+                    <span style="padding: 0 10px; font-size: 11px; font-weight: 800; color: #94a3b8; text-transform: uppercase;">Payment Options</span>
+                    <div style="flex: 1; height: 1px; background: #e2e8f0;"></div>
+                </div>
+                <button id="btn-upi" class="primary-btn" style="background: var(--success); margin: 0; display:flex; justify-content:center; align-items:center; gap:8px;" onclick="processOrder('UPI')"><span style="font-size:20px;">⚡</span> Pay via UPI</button>
+                <button id="btn-cod" class="primary-btn" style="background: #f8fafc; color: #1e293b; border: 2px solid #cbd5e1; box-shadow: none; margin: 0; display:flex; justify-content:center; align-items:center; gap:8px;" onclick="processOrder('COD')"><span style="font-size:20px;">💵</span> Cash on Delivery</button>
+                <button id="btn-udhar" class="primary-btn" style="background: #1e293b; color: white; margin: 0; display:none; justify-content:center; align-items:center; gap:8px;" onclick="processUdharOrder()"><span style="font-size:20px;">📒</span> 1-Tap Khata (Pay Later)</button>
+            </div>
+        </div>
+        <div id="empty-cart-msg" style="display: none; text-align:center; padding:80px 20px;">
+            <div style="font-size: 80px; margin-bottom: 20px; opacity: 0.8;">🛒</div>
+            <h3 style="font-size: 20px; font-weight: 800; color: #1e293b; margin-bottom: 10px;">Cart ekdum khali hai!</h3>
+            <button class="primary-btn" style="width: auto; padding: 15px 35px; border-radius: 25px;" onclick="goBack()">Continue Shopping ➔</button>
+        </div>
+    </div>
+
+    <div id="screen-orders" class="screen">
+        <div class="header" style="padding-bottom: 35px;">
+            <div style="display:flex; align-items:center; gap: 15px;">
+                <span class="back-btn" onclick="goBack()" style="color: white;">⬅️</span>
+                <h2 style="font-size: 24px;" id="lang-orders">My Orders 📦</h2>
+            </div>
+        </div>
+        <div style="padding: 20px;">
+            <div id="active-order-tracking" style="display: none; background: white; border: 1px solid #e2e8f0; border-left: 5px solid var(--primary); padding: 20px; border-radius: 16px; margin-bottom: 25px; box-shadow: 0 4px 10px rgba(0,0,0,0.05);">
+                <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 15px;">
+                    <div>
+                        <span id="order-status-badge" style="background: #eff6ff; color: #3b82f6; padding: 5px 10px; border-radius: 8px; font-weight: 800;">ACTIVE ORDER</span>
+                        <h4 style="font-size: 15px; font-weight: 800; color: #1e293b; margin-top: 8px;" id="active-order-shop">Sharma Store</h4>
+                        <p style="font-size: 12px; color: #64748b; font-weight: 600;" id="active-order-time">Arriving in 15 mins</p>
+                        <div id="active-order-receipt-btn-container"></div>
+                    </div>
+                    <div style="text-align: right;">
+                        <h4 style="font-size: 18px; font-weight: 800; color: var(--success);" id="active-order-total">₹0</h4>
+                        <span style="font-size: 11px; color: #94a3b8; font-weight: 800; background:#f1f5f9; padding:2px 6px; border-radius:4px;" id="active-order-pay-type">COD</span>
+                    </div>
+                </div>
+                <div style="background: #f8fafc; padding: 15px; border-radius: 8px; border: 1px dashed #cbd5e1; margin-bottom: 20px;">
+                    <p style="font-size: 11px; color: #64748b; font-weight: 800; margin-bottom: 8px;">ITEMS ORDERED:</p>
+                    <div id="active-order-items" style="font-size: 13px; color: #1e293b; font-weight: 600;"></div>
+                </div>
+                <div class="tracker-container">
+                    <div class="tracker-line"></div>
+                    <div class="tracker-line-fill" id="tracker-fill" style="width: 20%;"></div>
+                    <div class="track-step active" id="step-1"><div class="icon">✅</div>Accepted</div>
+                    <div class="track-step" id="step-2"><div class="icon">📦</div>Packing</div>
+                    <div class="track-step" id="step-3"><div class="icon">🛵</div>On Way</div>
+                    <div class="track-step" id="step-4"><div class="icon">🎉</div>Delivered</div>
+                </div>
+                <div id="cancel-timer-section" style="margin-top: 20px; text-align: center; border-top: 1px dashed #cbd5e1; padding-top: 20px;">
+                    <p style="font-size: 11px; color: #64748b; margin-bottom: 10px;">Order can be cancelled before packing starts</p>
+                    <button id="btn-cancel-order" class="btn-outline" style="color: var(--danger); border-color: var(--danger); padding: 12px; width: 100%;" onclick="cancelActiveOrder()">
+                        Cancel Order (<span id="cancel-timer-display">05:00</span>)
+                    </button>
+                </div>
+            </div>
+            <h4 class="section-title" style="margin-left: 0;">Past Orders</h4>
+            <div style="display:flex; gap:10px; padding: 0 0 15px; overflow-x: auto; scrollbar-width: none;" id="order-tabs">
+                <button class="filter-btn active" id="tab-All" onclick="renderOrdersScreen('All')">All</button>
+                <button class="filter-btn" id="tab-Udhar" onclick="renderOrdersScreen('Udhar Khata')">Udhar</button>
+                <button class="filter-btn" id="tab-Cash" onclick="renderOrdersScreen('Cash')">Cash</button>
+                <button class="filter-btn" id="tab-Online" onclick="renderOrdersScreen('UPI')">Online</button>
+            </div>
+            <div id="my-orders-list"></div>
+        </div>
+    </div>
+
+    <div id="screen-success" class="screen">
+        <div style="text-align: center; padding: 40px 20px;">
+            <h1 style="font-size: 70px; margin-bottom: 15px;">🎉</h1>
+            <h2 style="color: #1e293b; font-weight: 800; margin-bottom: 8px;">Order Placed!</h2>
+            <p style="color: #64748b; font-size: 14px; margin-bottom: 25px;" id="success-subtext">Store has received your order.</p>
+
+            <div class="scratch-wrapper" id="success-scratch-wrapper">
+                <div class="reward-content" id="success-reward-content"></div>
+                <div id="scratch-suspense-layer" style="position:absolute; top:0; left:0; width:100%; height:100%; display:flex; justify-content:center; align-items:center; z-index:3; pointer-events:none;">
+                    <div class="pulse-ring" style="width:60px; height:60px; background:rgba(255,255,255,0.4); box-shadow: 0 0 0 0 rgba(255,255,255,0.8);">👆</div>
+                </div>
+                <canvas id="scratch-canvas" class="scratch-canvas" style="touch-action: none; z-index:2;"></canvas>
+            </div>
+
+            <h3 style="color: #d97706; font-weight: 900; margin-top: 15px; margin-bottom: 5px;">Win up to 100 Gali-Coins!</h3>
+            <p style="font-size:12px; color:#64748b; font-weight:800; margin-bottom:20px;" id="scratch-hint-text">👆 Rub the card to reveal your reward!</p>
+            <div id="wa-buttons-container" style="margin-bottom: 25px;"></div>
+
+            <button class="btn-full" style="background: var(--primary);" onclick="switchNav('screen-orders', 'nav-orders')">Track Order 📍</button>
+        </div>
+    </div>
+
+    <div id="screen-coins" class="screen" style="background: white; min-height: 100vh;">
+        <div class="header" style="padding-bottom: 55px;">
+            <div style="display:flex; align-items:center;">
+                <span class="back-btn" onclick="goBack()" style="color: white;">⬅️</span>
+                <h2 style="font-size: 22px;">Gali-Coins Rewards 🎁</h2>
+            </div>
+        </div>
+
+        <div style="background: #f0fdf4; border: 1px solid #bbf7d0; margin: -25px 20px 25px; position: relative; z-index: 20; padding: 12px; border-radius: 12px; text-align: center; color: #166534; font-weight: 800; font-size: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.05);">
+            💡 1 Gali-Coin = 1 Rupee (₹1)
+        </div>
+
+        <div class="coins-summary-box">
+            <p style="font-size: 13px; color: #b45309; font-weight: 800; text-transform: uppercase;">Available Balance</p>
+            <h1 style="font-size: 45px; font-weight: 800; color: var(--primary); margin: 8px 0; line-height: 1;">🪙 <span id="coins-available">0</span></h1>
+            <p style="font-size: 14px; color: #d97706; font-weight: 600;">(₹<span id="coins-rupee-value">0</span> value)</p>
+
+            <div class="coin-stat-row">
+                <div class="coin-stat">
+                    <p style="font-size: 12px; color: #d97706; font-weight: 600;">Lifetime Earned</p>
+                    <h4 style="font-size: 18px; font-weight: 800; color: #b45309;">🪙 <span id="coins-lifetime">0</span></h4>
+                </div>
+                <div style="width: 1px; background: #fcd34d;"></div>
+                <div class="coin-stat">
+                    <p style="font-size: 12px; color: #d97706; font-weight: 600;">Cards Scratched</p>
+                    <h4 style="font-size: 18px; font-weight: 800; color: #b45309;"><span id="coins-scratched-count">0</span> Cards</h4>
+                </div>
+            </div>
+        </div>
+
+        <h4 class="section-title">Pending Scratch Cards (<span id="pending-cards-count">0</span>)</h4>
+        <div style="padding: 0 20px;">
+            <div id="pending-cards-list" style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 25px;"></div>
+            <div id="no-pending-msg" style="text-align: center; padding: 25px; font-size: 13px; color: #64748b; background: #f8fafc; border-radius: 12px; border: 1px dashed #cbd5e1; margin-bottom: 25px;">
+                Koi naya card nahi hai. Order lagao aur jeeto! 🛍️
+            </div>
+        </div>
+
+        <h4 class="section-title">Past Rewards</h4>
+        <div id="scratched-cards-list" style="padding: 0 20px 45px;"></div>
+    </div>
+
+    <div id="screen-daily-dash" class="screen" style="background: #f8fafc; min-height: 100vh;">
+        <div class="header" style="padding-bottom: 30px; border-radius: 0; position: sticky; top: 0; z-index: 100;">
+            <div style="display:flex; align-items:center;">
+                <span class="back-btn" onclick="goBack()" style="color: white;">⬅️</span>
+                <h2 style="font-size: 20px;">Daily Schedule</h2>
+            </div>
+        </div>
+        <div style="padding: 0 20px; margin-top:20px;">
+            <button class="btn-outline" style="background: white;" onclick="openSubModal('Daily')">➕ Create New Daily Schedule</button>
+        </div>
+    </div>
+
+    <div id="screen-daily-setup" class="screen" style="background: #f8fafc; min-height: 100vh;">
+        <div class="header" style="padding-bottom: 25px; border-radius: 0; position: sticky; top: 0; z-index: 100;">
+            <div style="display:flex; align-items:center;">
+                <span class="back-btn" onclick="goBack()" style="color: white;">⬅️</span>
+                <h2 style="font-size: 20px;">Setup & Pay 🎯</h2>
+            </div>
+        </div>
+        <div id="setup-vendor-options-Daily" class="setup-vendor-scroll"></div>
+        <div id="daily-item-preview" class="item-preview-grid" style="padding: 0 20px;"></div>
+    
+        <div style="padding: 15px 20px;">
+            <h4 style="font-size: 14px; font-weight: 800; color: #1e293b; margin-bottom: 10px;">Select Duration</h4>
+            <div class="duration-btns-container" id="daily-duration-container">
+                <button class="duration-btn active" onclick="setScheduleDuration('Daily', 7, this)">7 Days</button>
+                <button class="duration-btn" onclick="setScheduleDuration('Daily', 15, this)">15 Days</button>
+                <button class="duration-btn" onclick="setScheduleDuration('Daily', 30, this)">1 Month</button>
+                <button class="duration-btn" onclick="setScheduleDuration('Daily', 60, this)">2 Months</button>
+            </div>
+        </div>
+
+        <div style="margin: 0 20px 15px; padding: 15px; background: linear-gradient(135deg, #fef3c7, #fde68a); border: 1px solid #fcd34d; border-radius: 12px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 4px 10px rgba(217, 119, 6, 0.1);">
+            <div style="display: flex; align-items: center; gap: 10px;">
+                <span style="font-size: 24px;">👑</span>
+                <div>
+                    <h4 style="font-size: 14px; font-weight: 900; color: #b45309; margin-bottom: 2px;">Gali-Safar VIP</h4>
+                    <p style="font-size: 11px; color: #d97706; font-weight: 600; margin: 0;">Get ₹0 Delivery Fee every day!</p>
+                </div>
+            </div>
+            <label class="switch">
+                <input type="checkbox" id="vip-pass-checkbox" onchange="applyVIPPass()">
+                <span class="slider" style="background: #fcd34d;"></span>
+            </label>
+        </div>
+
+        <div style="margin: 0 20px 20px; padding: 15px; background: white; border: 1px solid #e2e8f0; border-radius: 12px; box-shadow: 0 2px 5px rgba(0,0,0,0.02);">
+            <h4 style="font-size: 14px; font-weight: 800; color: #1e293b; margin-bottom: 10px;">Vacation Mode ✈️</h4>
+            <p style="font-size: 11px; color: #64748b; margin-bottom: 15px;">Going out of town? Pause your daily deliveries instantly.</p>
+            <div style="display: flex; gap: 10px;">
+                <input type="date" id="vacation-date" class="search-box" style="margin: 0; padding: 10px; flex: 1; border: 1px solid #cbd5e1; border-radius: 8px;">
+                <button class="btn-outline" style="width: auto; padding: 10px 15px; margin: 0; font-size: 12px;" onclick="handleVacationDate()">Set Dates</button>
+            </div>
+            <button id="pause-daily-btn" class="btn-full" style="background: #fef2f2; color: #ef4444; border: 1px solid #fca5a5; margin: 15px 0 0 0; padding: 10px; border-radius: 8px; font-size: 12px;" onclick="togglePauseDelivery()">⏸️ PAUSE DELIVERY NOW</button>
+        </div>
+
+        <div class="bill-box" style="margin-bottom: 90px;">
+            <div class="bill-row"><span>Advance Payment Needed</span><span id="daily-advance-amt" style="font-weight: 800; color: var(--success);">₹0</span></div>
+            <div class="bill-row grand-total-row"><span>Total Schedule Value</span><span id="daily-grand-total">₹0</span></div>
+            <button class="primary-btn" style="margin-top: 15px; background: var(--success);" onclick="confirmAndSaveSchedule('Daily')">Pay Advance & Start ➔</button>
+        </div>
+    </div>
+
+    <div id="screen-monthly-dash" class="screen" style="background: #f8fafc; min-height: 100vh;">
+        <div class="header" style="padding-bottom: 30px; border-radius: 0; position: sticky; top: 0; z-index: 100;">
+            <div style="display:flex; align-items:center;">
+                <span class="back-btn" onclick="goBack()" style="color: white;">⬅️</span>
+                <h2 style="font-size: 20px;">Monthly Ration Schedule</h2>
+            </div>
+        </div>
+        <div style="padding: 0 20px; margin-top: 20px;">
+            <button class="btn-outline" style="background: white;" onclick="openSubModal('Monthly')">➕ Create New Monthly Ration List</button>
+        </div>
+    </div>
+
+    <div id="screen-monthly-setup" class="screen" style="background: #f8fafc; min-height: 100vh;">
+        <div class="header" style="padding-bottom: 25px; border-radius: 0; position: sticky; top: 0; z-index: 100;">
+            <div style="display:flex; align-items:center;">
+                <span class="back-btn" onclick="goBack()" style="color: white;">⬅️</span>
+                <h2 style="font-size: 20px;">Setup & Pay 🎯</h2>
+            </div>
+        </div>
+        <div id="setup-vendor-options-Monthly" class="setup-vendor-scroll"></div>
+        <div id="monthly-item-preview" class="item-preview-grid" style="padding: 0 20px;"></div>
+    
+        <div style="padding: 15px 20px;">
+            <h4 style="font-size: 14px; font-weight: 800; color: #1e293b; margin-bottom: 10px;">Select Duration</h4>
+            <div class="duration-btns-container" id="monthly-duration-container">
+                <button class="duration-btn active" onclick="setScheduleDuration('Monthly', 1, this)">1 Month</button>
+                <button class="duration-btn" onclick="setScheduleDuration('Monthly', 3, this)">3 Months</button>
+                <button class="duration-btn" onclick="setScheduleDuration('Monthly', 6, this)">6 Months</button>
+            </div>
+        </div>
+
+        <div style="margin: 0 20px 15px; padding: 15px; background: white; border: 1px solid #e2e8f0; border-radius: 12px;">
+            <h4 style="font-size: 14px; font-weight: 800; color: #1e293b; margin-bottom: 10px;">Delivery Date 📅</h4>
+            <p style="font-size: 11px; color: #64748b; margin-bottom: 10px;">Mahine ki kis tareekh ko saaman chahiye?</p>
+            <input type="number" id="monthly-date" class="search-box" style="margin:0; padding:10px; border-radius:8px; border:1px solid #cbd5e1;" value="1" min="1" max="31" onchange="updateDeductionWarning()">
+            <p id="upi-deduction-warning" style="font-size: 10px; color: #d97706; margin-top: 8px; font-weight: 800;">⚠️ Amount will be deducted on the 1st of every month.</p>
+        </div>
+
+        <div style="margin: 0 20px 20px; padding: 15px; background: white; border: 1px solid #e2e8f0; border-radius: 12px; box-shadow: 0 2px 5px rgba(0,0,0,0.02);">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                    <h4 style="font-size: 14px; font-weight: 800; color: #1e293b; margin-bottom: 2px;">Split Bill? ➗</h4>
+                    <p style="font-size: 11px; color: #64748b; margin: 0;">Roommates ke sath baantna hai?</p>
+                </div>
+                <input type="number" id="monthly-split-count" class="bill-split-input" value="1" min="1" max="10" onchange="updateMonthlyBill()">
+            </div>
+            <div id="monthly-split-result" style="display:none; margin-top: 10px; padding: 8px; background: #f0fdf4; border: 1px dashed #bbf7d0; color: #166534; font-size: 14px; font-weight: 900; text-align: center; border-radius: 8px;"></div>
+        </div>
+
+        <div class="bill-box" style="margin-bottom: 90px;">
+            <div class="bill-row"><span>Items Cost / Delivery</span><span id="monthly-item-total">₹0</span></div>
+            <div class="bill-row"><span>Monthly Delivery Fee</span><span>₹60</span></div>
+            <div class="bill-row"><span>Setup Fee</span><span>₹5</span></div>
+            <div class="bill-row grand-total-row"><span>Total Autopay Setup</span><span id="monthly-grand-total">₹0</span></div>
+            <button class="primary-btn" style="margin-top: 15px; background: #3b82f6;" onclick="confirmAndSaveSchedule('Monthly')">Set UPI Autopay ⚡</button>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="modal-udhar-counter">
+        <div class="passbook-sheet">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px;">
+                <h3 style="font-size: 20px; font-weight: 800; color: #1e293b;">Payment Mode Update ⚠️</h3>
+                <span style="cursor:pointer; font-size:26px; color:#94a3b8;" onclick="document.getElementById('modal-udhar-counter').style.display='none'">✕</span>
+            </div>
+            <p style="font-size: 14px; color: #64748b; font-weight: 600; margin-bottom: 20px;">
+                <span id="counter-shop-name" style="color: #1e293b; font-weight: 800;">Dukaandaar</span> ne Udhar request accept nahi ki hai.<br>
+                <span style="color: var(--danger); font-size: 12px;">Notice: Pichla udhar baaki hai, pehle usey settle karein.</span>
+            </p>
+
+            <div class="policy-card active" onclick="alert('Switching to Cash/UPI...'); document.getElementById('modal-udhar-counter').style.display='none';">
+                <span style="font-size: 28px;">💵</span>
+                <div><h4>Pay via UPI / COD</h4><p>Order turant confirm karein.</p></div>
+            </div>
+            <div class="policy-card" onclick="alert('Calling Vendor...')">
+                <span style="font-size: 28px;">📞</span>
+                <div><h4>Call Vendor</h4><p>Dukaandaar se direct baat karein.</p></div>
+            </div>
+            <button class="primary-btn" style="margin-top: 15px; background: #e2e8f0; color: #1e293b; border: 1px dashed #cbd5e1;" onclick="document.getElementById('modal-udhar-counter').style.display='none'; alert('Opening Khata to Settle...')">Settle Previous Dues Now ➔</button>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="udharModal">
+        <div class="modal-content">
+            <div style="position: absolute; top: 15px; right: 15px; font-weight: 800; color: #94a3b8; cursor: pointer;" onclick="document.getElementById('udharModal').style.display='none'">✕</div>
+            <h3 style="font-size: 20px; color: #1e293b; font-weight: 800;">1-Time Khata Setup</h3>
+            <p style="font-size: 13px; color: #64748b; margin: 8px 0 25px;">Ek baar selfie click karein!</p>
+            <label class="camera-box" style="cursor: pointer;">
+                <span id="cam-icon" style="font-size: 45px;">📷</span>
+                <input type="file" accept="image/*" capture="user" onchange="previewSelfie(event)">
+                <img id="selfie-img" style="width: 100%; height: 100%; object-fit: cover; display: none; position: absolute; top:0; left:0; border-radius:50%;">
+            </label>
+            <button class="btn-full" id="send-udhar-btn" style="margin: 0; opacity: 0.5; background: var(--success);" disabled onclick="setupKhataAndOrder()">Save & Link Khata ✅</button>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="modal-edit-profile">
+        <div class="modal-content" style="text-align: left;">
+            <div style="position: absolute; top: 15px; right: 15px; font-weight: 800; color: #94a3b8; cursor: pointer;" onclick="document.getElementById('modal-edit-profile').style.display='none'">✕</div>
+            <h3 style="font-size: 20px; color: #1e293b; font-weight: 800; margin-bottom: 20px;">Edit Profile ✏️️</h3>
+            <label style="font-size: 12px; font-weight: 800; color: #64748b;">Full Name</label>
+            <input type="text" id="edit-name" class="login-input" style="margin-bottom: 10px; padding: 10px;">
+            <label style="font-size: 12px; font-weight: 800; color: #64748b;">Phone Number</label>
+            <input type="tel" id="edit-phone" class="login-input" style="margin-bottom: 10px; padding: 10px; background-color: #f1f5f9; color: #94a3b8; cursor: not-allowed; border-color: #e2e8f0;" readonly>
+            <label style="font-size: 12px; font-weight: 800; color: #64748b;">Address</label>
+            <textarea id="edit-address" class="login-input" style="margin-bottom: 20px; padding: 10px; height: 60px; resize: none;"></textarea>
+            <button class="primary-btn" onclick="saveProfileChanges()">Save Changes ✅</button>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="modal-receipt">
+        <div class="modal-content" style="background: #f8fafc; padding: 20px; width: 95%;">
+            <div style="position: absolute; top: 15px; right: 15px; font-weight: 800; color: #94a3b8; cursor: pointer;" onclick="document.getElementById('modal-receipt').style.display='none'">✕</div>
+            <h3 style="font-size: 18px; color: #1e293b; font-weight: 800; margin-bottom: 15px; border-bottom: 1px dashed #cbd5e1; padding-bottom: 10px; text-align: center;">Order Receipt 🧾</h3>
+            <div id="receipt-content" style="text-align: left; font-size: 12px; color: #475569; max-height: 60vh; overflow-y: auto;"></div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="khataPassbookModal" onclick="closePassbook(event)">
+        <div class="passbook-sheet" onclick="event.stopPropagation()">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                <h3 style="font-size: 20px; font-weight: 800; color: #1e293b;">Udhar Passbook</h3>
+                <div style="font-size: 26px; cursor: pointer; color: #94a3b8;" onclick="document.getElementById('khataPassbookModal').style.display='none'">✕</div>
+            </div>
+
+            <div style="background: #fef2f2; border: 1px solid #fecaca; border-radius: 12px; padding: 18px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                <span style="font-size: 14px; font-weight: 800; color: #7f1d1d;">TOTAL PENDING</span>
+                <span style="font-size: 22px; font-weight: 800; color: #dc2626;" id="passbook-total">₹0</span>
+            </div>
+
+            <div id="qr-dynamic-box" style="background: #f8fafc; border: 1px dashed #cbd5e1; border-radius: 12px; padding: 15px; text-align: center; margin-bottom: 20px; display: flex; justify-content: center; align-items: center; gap: 18px;"></div>
+
+            <div id="passbook-list" style="max-height: 25vh; overflow-y: auto; margin-bottom: 20px; border-bottom: 1px solid #cbd5e1; padding:0;"></div>
+
+            <div style="display: flex; gap: 12px; align-items: center; flex-wrap: wrap;">
+                <input type="number" id="pay-amount-input" class="login-input" style="margin: 0; padding: 12px; width: 100%; border-color: var(--success);" placeholder="Enter Amount to Pay (₹)">
+                <button class="btn-full" style="background: var(--success); margin: 0; padding: 12px; width: 48%; flex: 1;" onclick="deductKhata('upi')">Pay via UPI ⚡</button>
+                <button class="btn-full" style="background: #fffbeb; color: var(--primary); border: 1px solid #fde68a; margin: 0; padding: 12px; width: 48%; flex: 1;" onclick="deductKhata('coins')">Gali-Coins 🪙</button>
+
+                <button class="btn-full" style="background: white; color: #3b82f6; border: 1px dashed #bfdbfe; margin: 8px 0 0 0; padding: 12px; width: 100%;" onclick="openSplitBillModal()">Split with Friends ➗</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="standaloneScratchModal" onclick="if(event.target.id === 'standaloneScratchModal') { this.style.display='none'; renderCoinsScreen(); }">
+        <div class="modal-content" style="background: transparent; box-shadow: none;">
+            <h3 style="color: #d97706; font-weight: 900; margin-bottom: 10px; font-size: 24px;">Win up to 100 Gali-Coins!</h3>
+            <div class="scratch-wrapper" style="margin: 0 auto;">
+                <div class="reward-content" id="standalone-reward-content"></div>
+                <canvas id="standalone-scratch-canvas" class="scratch-canvas" style="touch-action: none;"></canvas>
+            </div>
+            <p style="font-size:12px; color:white; font-weight:800; margin-top:15px;" id="standalone-hint-text">👆 Rub the card properly!</p>
+            <button class="btn-full" style="background: white; color: var(--secondary); margin-top: 25px;" onclick="document.getElementById('standaloneScratchModal').style.display='none'; renderCoinsScreen();">Close</button>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="subModal" onclick="closeSubModal(event)">
+        <div class="passbook-sheet" onclick="event.stopPropagation()" style="max-height: 85vh; display: flex; flex-direction: column; background: #f8fafc; z-index: 2500;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; padding: 0 5px;">
+                <div>
+                    <h3 style="font-size: 20px; font-weight: 800; color: #1e293b;" id="sub-type-label">Schedule</h3>
+                    <p style="font-size: 12px; color: #64748b;">Quantity ke sath items add karein</p>
+                </div>
+                <span style="cursor:pointer; font-size:26px; color:#94a3b8; background: white; width: 40px; height: 40px; display: flex; justify-content: center; align-items: center; border-radius: 50%; box-shadow: 0 2px 5px rgba(0,0,0,0.1);" onclick="document.getElementById('subModal').style.display='none'">✕</span>
+            </div>
+
+            <div class="search-container-mic" style="margin: 0 0 20px 0; padding: 0;">
+                <input type="text" class="search-box" style="padding: 15px 80px 15px 20px; border: 1.5px solid #e2e8f0;" placeholder="Doodh, Bread, Chini..." id="sub-search" onkeyup="filterSubItems()">
+                <div class="scan-btn" style="right: 50px; background: #e0f2fe; padding: 5px 10px; border-radius: 10px; position: absolute; top: 50%; transform: translateY(-50%); font-size: 22px; cursor: pointer;" onclick="scanTarget='schedule'; document.getElementById('hidden-parchi-input').click()">📄</div>
+                <div class="mic-btn" style="right: 12px;" onclick="startVoiceSearch('sub')">🎤</div>
+            </div>
+
+            <div id="sub-quick-actions" style="display:flex; gap:10px; margin: 0 5px 20px; overflow-x: auto; scrollbar-width: none;">
+                <button class="btn-outline" style="margin:0; padding:8px 12px; font-size:11px; white-space: nowrap;" onclick="addQuickBundle('Gym Diet')">💪 Gym Diet</button>
+                <button class="btn-outline" style="margin:0; padding:8px 12px; font-size:11px; white-space: nowrap;" onclick="addQuickBundle('Night Study')">🦉 Night Study</button>
+                <button class="btn-outline" style="margin:0; padding:8px 12px; font-size:11px; white-space: nowrap;" onclick="addFamilyKit()">📦 Add Family Kit</button>
+            </div>
+
+            <div id="sub-added-items" style="background: white; border: 1px solid #bfdbfe; border-radius: 12px; padding: 15px; margin-bottom: 15px; display: none;">
+                <h4 style="font-size: 13px; font-weight: 800; color: #1d4ed8; margin-bottom: 10px;">Items in List (<span id="sub-count">0</span>)</h4>
+                <div id="sub-cart-list" style="display: flex; flex-direction: column; gap: 10px; max-height: 150px; overflow-y: auto;"></div>
+            </div>
+
+            <div id="sub-modal-list" style="display: flex; flex-direction: column; gap: 15px; overflow-y: auto; flex-grow: 1; padding: 5px;"></div>
+
+            <div style="margin-top: 15px;">
+                <button class="primary-btn" onclick="proceedToSubSetup()">Proceed to Setup ➔</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="modal-modify-schedule">
+        <div class="modal-content" style="width: 95%; max-height: 80vh; overflow-y: auto; background: #f8fafc; padding: 20px;">
+            <div style="position: absolute; top: 15px; right: 15px; font-weight: 800; color: #94a3b8; cursor: pointer; font-size: 20px;" onclick="document.getElementById('modal-modify-schedule').style.display='none'">✕</div>
+            <h3 style="font-size: 18px; color: #1e293b; font-weight: 800; margin-bottom: 15px; text-align: left;">Modify Schedule Items</h3>
+            <div id="modify-schedule-list" style="display: flex; flex-direction: column; gap: 10px; text-align: left;"></div>
+            <button class="primary-btn" style="margin-top: 20px;" onclick="saveModifiedSchedule()">Save Changes ✅</button>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="timeSlotModal">
+        <div class="passbook-sheet slot-sheet" style="padding:0; border-radius: 20px 20px 0 0;">
+            <div class="slot-header">
+                <h3 style="font-size: 18px; font-weight: 800; color: #1e293b; margin:0;">Select delivery slot</h3>
+                <div style="font-size: 20px; font-weight: 800; cursor: pointer; color: #1e293b; background: #f1f5f9; width: 30px; height: 30px; border-radius: 50%; display: flex; justify-content: center; align-items: center;" onclick="document.getElementById('timeSlotModal').style.display='none'">✕</div>
+            </div>
+            <div class="date-tabs-container" id="slot-dates-container"></div>
+            <div class="slots-grid-container" id="slots-grid-container"></div>
+            <div class="confirm-slot-wrapper">
+                <button class="primary-btn" style="background: var(--success); font-size: 16px;" onclick="confirmTimeSlot()">Confirm</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="floating-cart" class="floating-cart" style="display:none;" onclick="switchNav('screen-cart', 'nav-cart')">
+        <div id="float-cart-info" style="font-weight:800; font-size:15px;"></div>
+        <div style="font-size:15px; font-weight:800;">View Cart ➔</div>
+    </div>
+
+    <div id="screen-parchi-verify" class="screen" style="padding: 20px; background: #f8fafc; min-height: 100vh;">
+        <div style="display: flex; align-items: center; margin-bottom: 20px;">
+            <span class="back-btn" onclick="goBack()" style="color:#1e293b;">⬅️</span>
+            <div>
+                <h3 style="font-size: 20px; color: #1e293b; font-weight: 800;">Parchi Check ✅</h3>
+                <p style="font-size: 12px; color: #64748b;">AI ne yeh items padhe hain, kripya verify karein:</p>
+            </div>
+        </div>
+        <div id="parchi-verify-list" style="margin-bottom: 15px;"></div>
+        <button class="btn-outline" style="margin: 15px 0 25px 0; border: 2px dashed #cbd5e1; color: #64748b; background: white;" onclick="addManualItemToParchi()">
+            ➕ Haath se naya item jodein
+        </button>
+        <button class="primary-btn" style="background: var(--success); box-shadow: 0 4px 10px rgba(16, 185, 129, 0.3);" onclick="generateParchiRoutes()">
+            Dukaanein Compare Karein 🔍
+        </button>
+    </div>
+
+    <div id="screen-parchi-route" class="screen" style="padding: 20px; background: #f1f5f9; min-height: 100vh;">
+        <div style="display: flex; align-items: center; margin-bottom: 20px;">
+            <span class="back-btn" onclick="goBack()" style="color:#1e293b;">⬅️</span>
+            <div>
+                <h3 style="font-size: 20px; color: #1e293b; font-weight: 800;">Parchi Results 📋</h3>
+                <p style="font-size: 12px; color: #64748b;">Smart Match & Substitutes</p>
+            </div>
+        </div>
+
+        <div id="parchi-exact-match" style="margin-bottom: 15px;"></div>
+        <div id="parchi-sub-match" style="margin-bottom: 15px;"></div>
+        <div id="parchi-oos-match" style="margin-bottom: 25px;"></div>
+
+        <button class="primary-btn" id="parchi-add-cart-btn" style="background: var(--success); box-shadow: 0 4px 10px rgba(16, 185, 129, 0.3); display: none;" onclick="if(typeof addParchiToCart === 'function') addParchiToCart()">
+            Add Available Items to Cart 🛒
+        </button>
+    </div>
+
+    <div class="modal-overlay" id="modal-oos">
+        <div class="passbook-sheet">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px;">
+                <h3 style="font-size: 20px; font-weight: 800; color: #1e293b;">Store Instructions 🏪</h3>
+                <span style="cursor:pointer; font-size:26px; color:#94a3b8;" onclick="document.getElementById('modal-oos').style.display='none'">✕</span>
+            </div>
+            <p style="font-size: 13px; color: #64748b; font-weight: 600; margin-bottom: 20px;">Agar dukaan par koi item khatam ho jaye, toh dukaandaar ko kya karna chahiye?</p>
+
+            <div class="policy-card active" id="pol-remove" onclick="setPolicy('Remove Item', 'pol-remove')">
+                <span style="font-size: 28px;">❌</span>
+                <div><h4>Remove Item (Fastest)</h4><p>Item bill se hata do, baki saaman bhej do.</p></div>
+            </div>
+            <div class="policy-card" id="pol-call" onclick="setPolicy('Call Me', 'pol-call')">
+                <span style="font-size: 28px;">📞</span>
+                <div><h4>Call & Ask Me</h4><p>Dukaandaar mujhe call karke pooche.</p></div>
+            </div>
+            <div class="policy-card" id="pol-replace" onclick="setPolicy('Replace Item', 'pol-replace')">
+                <span style="font-size: 28px;">🔄</span>
+                <div><h4>Best Substitute</h4><p>Milta-julta doosra brand/item daal do.</p></div>
+            </div>
+            <button class="primary-btn" style="margin-top: 15px;" onclick="placeFinalOrder()">Confirm & Proceed ➔</button>
+        </div>
+    </div>
+
+    <div id="screen-single-pay" class="screen" style="padding: 20px; background: white; min-height: 100vh;">
+        <div style="display: flex; align-items: center; margin-bottom: 25px;">
+            <span class="back-btn" onclick="goBack()" style="color:#1e293b;">⬅️</span>
+            <h3 style="font-size: 20px; color: #1e293b; font-weight: 800;">Complete Payment</h3>
+        </div>
+        <div style="text-align: center; border: 1px solid #e2e8f0; padding: 25px; border-radius: 16px; box-shadow: var(--shadow-card);">
+            <h2 id="single-pay-shop-name" style="color: var(--primary); margin-bottom: 8px;">Shop Name</h2>
+            <h1 id="single-pay-amount" style="font-size: 32px; color: #1e293b; margin-bottom: 20px;">₹0</h1>
+            <div id="single-pay-qr" style="background: #f8fafc; padding: 20px; border-radius: 12px; display: inline-block; margin-bottom: 20px; border: 2px dashed #cbd5e1;"></div>
+            <p style="font-size: 13px; color: #64748b; margin-bottom: 10px;">Scan QR or Pay directly via</p>
+            <div class="upi-apps-container">
+                <div class="upi-app" onclick="payWithUPIApp('GPay', false)">
+                    <div class="upi-icon"><img src="https://upload.wikimedia.org/wikipedia/commons/f/f2/Google_Pay_Logo.svg" style="width:30px;"></div>
+                    <span class="upi-name">GPay</span>
+                </div>
+                <div class="upi-app" onclick="payWithUPIApp('PhonePe', false)">
+                    <div class="upi-icon" style="background:#5f259f; border:none;"><span style="color:white; font-size:24px; font-weight:900;">पे</span></div>
+                    <span class="upi-name">PhonePe</span>
+                </div>
+                <div class="upi-app" onclick="payWithUPIApp('Paytm', false)">
+                    <div class="upi-icon" style="background:#002970; border:none;"><span style="color:#00b9f5; font-size:14px; font-weight:900;">Paytm</span></div>
+                    <span class="upi-name">Paytm</span>
+                </div>
+            </div>
+            <button class="primary-btn" style="background: var(--success); margin-top: 15px;" onclick="simulateSinglePayment()">I have paid ✅</button>
+        </div>
+        <div style="margin-top: 25px;">
+            <p style="font-size: 13px; font-weight: 800; color: #64748b; margin-bottom: 12px; text-transform: uppercase;">Other Methods</p>
+            <button class="btn-outline" style="color: #1e293b; border-color: #cbd5e1; display: flex; justify-content: space-between; align-items: center; padding: 15px;" onclick="executeFinalOrder(parseInt(document.getElementById('final-gt-hidden').innerText), 'Cash on Delivery')">
+                <span>💵 Pay on Delivery (Cash)</span>
+                <span style="font-size: 18px;">➔</span>
+            </button>
+        </div>
+    </div>
+
+    <div id="screen-multi-pay" class="screen" style="padding: 20px; background: #f8fafc; min-height: 100vh;">
+        <div style="display: flex; align-items: center; margin-bottom: 20px;">
+            <span class="back-btn" onclick="goBack()" style="color:#1e293b;">⬅️</span>
+            <div>
+                <h3 style="font-size: 20px; color: #1e293b; font-weight: 800;">Multi-Store Payment ⚡</h3>
+                <p style="font-size: 12px; color: #64748b;">Complete payments step-by-step</p>
+            </div>
+        </div>
+        <div class="progress-container">
+            <div class="progress-bar-fill" id="multi-pay-progress"></div>
+        </div>
+        <div id="multi-pay-list"></div>
+    </div>
+
+    <div class="modal-overlay" id="modal-qr">
+        <div class="modal-content">
+            <div style="position: absolute; top: 15px; right: 15px; font-weight: 800; color: #94a3b8; cursor: pointer;" onclick="document.getElementById('modal-qr').style.display='none'">✕</div>
+            <h3 style="font-size: 20px; color: #1e293b; font-weight: 800;" id="qr-shop-name">Shop Name</h3>
+            <h1 id="qr-amount" style="font-size: 28px; color: var(--success); margin-bottom: 20px;">₹0</h1>
+            <div id="qr-image-container" style="background: #f8fafc; border: 2px dashed #cbd5e1; border-radius: 16px; padding: 20px; display: inline-block; margin-bottom: 15px;"></div>
+            <p style="font-size: 12px; color: #64748b; margin-bottom: 8px;">Or Pay directly via App</p>
+            <div class="upi-apps-container" id="multi-upi-apps" style="margin-top: 15px; margin-bottom: 25px;"></div>
+            <button class="primary-btn" id="qr-paid-btn" style="background: var(--success);">I have paid ✅</button>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="modal-refund-warning" style="display:none; justify-content:center; align-items:center; z-index:9999;">
+        <div class="modal-content" style="background:white; padding:25px; border-radius:20px; width:85%; max-width:350px; position:relative; text-align: center;">
+            <span onclick="document.getElementById('modal-refund-warning').style.display='none'" style="position:absolute; top:10px; right:15px; font-size:24px; cursor:pointer; color: #94a3b8;">&times;</span>
+            <div style="font-size: 50px; margin-bottom: 10px;">⚠️</div>
+            <h3 style="color:#e11d48; margin-bottom:10px; font-weight: 900;">Order Non-Refundable</h3>
+            <p style="font-size:13px; color:#475569; margin-bottom:20px; font-weight: 600;">
+                Online payment karne par order <b>cancel ya refund nahi hoga</b>. Local vendor tak payment turant pahunch jaati hai. Kya aap confirm karna chahte hain?
+            </p>
+            <button class="primary-btn" style="background:#e11d48; width: 100%;" onclick="document.getElementById('modal-refund-warning').style.display='none'; switchNav('screen-single-pay');">Confirm & Proceed to Pay</button>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="modal-vendor-profile" onclick="if(event.target.id==='modal-vendor-profile') this.style.display='none'">
+        <div class="passbook-sheet" style="padding: 0; overflow: hidden; background: #f8fafc;">
+            <div style="position: relative; height: 140px; background: #e2e8f0;">
+                <img id="vp-cover" src="" style="width: 100%; height: 100%; object-fit: cover;">
+                <div style="position: absolute; top: 15px; right: 15px; background: rgba(0,0,0,0.5); color: white; width: 30px; height: 30px; border-radius: 50%; display: flex; justify-content: center; align-items: center; cursor: pointer; font-weight: bold; backdrop-filter: blur(5px);" onclick="document.getElementById('modal-vendor-profile').style.display='none'">✕</div>
+                <div style="position: absolute; bottom: -35px; left: 20px; display: flex; align-items: flex-end; gap: 12px;">
+                    <img id="vp-avatar" src="" style="width: 80px; height: 80px; border-radius: 50%; border: 4px solid #f8fafc; object-fit: cover; background: white; box-shadow: 0 4px 10px rgba(0,0,0,0.1);">
+                    <div style="background: white; padding: 4px 10px; border-radius: 12px; font-size: 13px; font-weight: 900; display: flex; align-items: center; gap: 4px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); margin-bottom: 5px;">
+                        ⭐ <span id="vp-rating">4.8</span>
+                    </div>
+                </div>
+            </div>
+            <div style="padding: 45px 20px 20px;">
+                <h3 id="vp-name" style="font-size: 22px; font-weight: 900; color: #1e293b; margin-bottom: 4px;">Dukaan Name</h3>
+                <p style="font-size: 12px; font-weight: 800; color: #10b981; margin-bottom: 20px; display: flex; align-items: center; gap: 6px;">
+                    <span style="background: #10b981; color: white; border-radius: 50%; width: 16px; height: 16px; display: inline-flex; justify-content: center; align-items: center; font-size: 10px;">✓</span> Gali-Safar Verified Account
+                </p>
+                <div style="background: white; border: 1px solid #e2e8f0; border-radius: 16px; padding: 18px; margin-bottom: 15px; box-shadow: var(--shadow-soft);">
+                    <p style="font-size: 11px; color: #64748b; font-weight: 800; text-transform: uppercase; margin-bottom: 6px;">📍 Address</p>
+                    <p id="vp-address" style="font-size: 13px; font-weight: 600; color: #1e293b;">Shop Address here</p>
+                </div>
+                <div style="background: white; border: 1px solid #e2e8f0; border-radius: 16px; padding: 18px; box-shadow: var(--shadow-soft);">
+                    <p style="font-size: 11px; color: #64748b; font-weight: 800; text-transform: uppercase; margin-bottom: 12px;">⏰ Timings</p>
+                    <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px dashed #cbd5e1; padding-bottom: 10px; margin-bottom: 10px;">
+                        <span style="font-size: 13px; font-weight: 600; color: #475569;">Opening</span>
+                        <span id="vp-open" style="font-size: 14px; font-weight: 800; color: #1e293b;">08:00 AM</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <span style="font-size: 13px; font-weight: 600; color: #475569;">Closing</span>
+                        <span id="vp-close" style="font-size: 14px; font-weight: 800; color: #1e293b;">10:00 PM</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="modal-item-variants" onclick="if(event.target.id==='modal-item-variants') this.style.display='none'">
+        <div class="passbook-sheet" style="padding: 25px 20px;">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 20px;">
+                <div style="display: flex; gap: 15px; align-items: center;">
+                    <div style="width: 70px; height: 70px; border-radius: 12px; border: 1px solid #e2e8f0; padding: 5px; background: white;">
+                        <img id="variant-item-img" src="" style="width: 100%; height: 100%; object-fit: contain;">
+                    </div>
+                    <div>
+                        <h3 id="variant-item-name" style="font-size: 16px; font-weight: 800; color: #1e293b; margin-bottom: 6px;">Item Name</h3>
+                        <span style="font-size: 10px; background: #fef3c7; color: #d97706; padding: 3px 8px; border-radius: 6px; font-weight: 800; border: 1px solid #fde68a;">LOOSE ITEM</span>
+                    </div>
+                </div>
+                <div style="font-size: 26px; cursor: pointer; color: #94a3b8; line-height: 1;" onclick="document.getElementById('modal-item-variants').style.display='none'">✕</div>
+            </div>
+
+            <p style="font-size: 12px; font-weight: 800; color: #64748b; margin-bottom: 12px; text-transform: uppercase;">Select Variant & Quantity</p>
+            <div id="variant-options-grid" style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-bottom: 25px;"></div>
+
+            <button class="primary-btn" id="btn-add-variant" style="display: flex; justify-content: space-between; align-items: center; background: var(--success);" onclick="confirmVariantAndCompare()">
+                <span>Add to Cart 🛒</span>
+                <span id="variant-btn-price" style="background: rgba(255,255,255,0.25); padding: 4px 10px; border-radius: 8px; font-size: 16px;">₹0</span>
+            </button>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="splitBillModal" onclick="if(event.target.id==='splitBillModal') this.style.display='none'">
+        <div class="modal-content">
+            <div style="position: absolute; top: 15px; right: 15px; font-weight: 800; color: #94a3b8; cursor: pointer;" onclick="document.getElementById('splitBillModal').style.display='none'">✕</div>
+            <h3 style="font-size: 20px; color: #1e293b; font-weight: 800;">Split Bill ➗</h3>
+            <p style="font-size: 13px; color: #64748b; margin: 8px 0 20px;">Doston ke beech bill barabar baatein</p>
+
+            <div style="background: #f8fafc; padding: 15px; border-radius: 12px; border: 1px dashed #cbd5e1; margin-bottom: 20px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                    <span style="font-weight: 800; color: #1e293b;">Total Amount</span>
+                    <span style="font-size: 18px; font-weight: 800; color: var(--danger);" id="split-total-amt">₹0</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <span style="font-weight: 800; color: #1e293b;">Kitne Log Hain?</span>
+                    <div class="qty-controls" style="width: 100px; background: white; border: 1px solid #e2e8f0;">
+                        <button class="qty-btn" onclick="adjustSplitCount(-1)">-</button>
+                        <span id="split-people-count" style="font-size: 16px;">2</span>
+                        <button class="qty-btn" onclick="adjustSplitCount(1)">+</button>
+                    </div>
+                </div>
+            </div>
+
+            <div style="background: #f0fdf4; padding: 15px; border-radius: 12px; border: 1px solid #bbf7d0; margin-bottom: 20px;">
+                <p style="font-size: 12px; color: #166534; font-weight: 800; margin-bottom: 5px;">Per Person (Dena hai):</p>
+                <h2 style="font-size: 28px; color: var(--success); font-weight: 900;" id="split-per-person">₹0</h2>
+            </div>
+
+            <button class="primary-btn" style="background: var(--whatsapp); color: white;" onclick="sendSplitWhatsApp()">Share on WhatsApp 💬</button>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="modal-fresh-vendor">
+        <div class="passbook-sheet">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <h3 style="font-size: 18px; font-weight: 800; color: #1e293b;">Select Fresh Vendor 🥦</h3>
+                <span style="cursor:pointer; font-size:24px; color:#94a3b8;" onclick="document.getElementById('modal-fresh-vendor').style.display='none'">✕</span>
+            </div>
+            <p style="font-size: 12px; color: #64748b; margin-bottom: 15px;">Fresh items ke liye pehle dukaan chunein:</p>
+            <div id="fresh-vendor-list"></div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="modal-fresh-clash">
+        <div class="modal-content" style="border: 2px solid #ef4444;">
+            <div style="font-size: 50px; margin-bottom: 10px;">⚠️</div>
+            <h3 style="color:#ef4444; font-weight:900; margin-bottom:10px;">Clash Detected!</h3>
+            <p style="font-size: 13px; color: #475569; font-weight: 600; margin-bottom: 20px;">
+                Fresh items ko alag-alag dukaano se mix nahi kiya ja sakta. Kya aap pichle vendor ka saaman clear karna chahte hain?
+            </p>
+            <button class="btn-full" style="background:#ef4444; margin: 0 0 10px 0; width: 100%;" onclick="clearCartAndProceedFresh()">Clear Cart & Continue</button>
+            <button class="btn-outline" style="color:#64748b; border-color:#cbd5e1; padding: 12px; margin: 0;" onclick="document.getElementById('modal-fresh-clash').style.display='none'">Cancel</button>
+        </div>
+    </div>
+
+    <div class="bottom-nav" id="nav-bar" style="display: none;">
+        <div class="nav-item active" id="nav-home" onclick="switchNav('screen-home', 'nav-home')">
+            <div class="nav-icon">🏠</div>
+            <span>Home</span>
+        </div>
+        <div class="nav-item" id="nav-search" style="display: none;" onclick="switchNav('screen-search', 'nav-search')">
+            <div class="nav-icon">🔍</div>
+            <span>Search</span>
+        </div>
+        <div class="nav-item" id="nav-orders" onclick="switchNav('screen-orders', 'nav-orders')">
+            <div class="nav-icon">📦</div>
+            <span>Orders</span>
+        </div>
+        <div class="nav-item" id="nav-khata" onclick="switchNav('screen-khata', 'nav-khata')">
+            <div class="nav-icon">📒</div>
+            <span>Khata</span>
+        </div>
+        <div class="nav-item" id="nav-cart" onclick="switchNav('screen-cart', 'nav-cart')">
+            <div class="nav-icon" style="position:relative; display:inline-block;">
+                🛒<span id="cart-badge" class="badge">0</span>
+            </div>
+            <span>Cart</span>
+        </div>
+    </div>
+
+</div>
+
+<script src="js/data.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/ui.js"></script>
+<script src="js/cart.js"></script>
+<script src="js/features.js"></script>
+
+<!-- 🌟 INLINE SCRIPT FOR TABS & FILTERS -->
+<script>
+    // TAB SWITCH LOGIC
+    function switchVerticalUniverse(target, element) {
+        if(typeof vibe === 'function') vibe();
+        
+        // Remove active from all tabs
+        let tabs = document.querySelectorAll('.folder-tab');
+        tabs.forEach(t => t.classList.remove('active'));
+        if(element) element.classList.add('active');
+
+        // Hide all views
+        let views = document.querySelectorAll('.vertical-universe-view');
+        views.forEach(v => v.style.display = 'none');
+
+        // Show target view
+        let targetView = document.getElementById('vertical-' + target);
+        if(targetView) targetView.style.display = 'block';
+        
+        // Hide Khata button in bottom nav if not Kirana
+        let navKhata = document.getElementById('nav-khata');
+        if(navKhata) {
+            navKhata.style.display = (target === 'kirana') ? 'flex' : 'none';
+        }
+    }
+
+    // PILL FILTER LOGIC
+    function filterKiranaFulfillment(type, elem) {
+        if(typeof vibe === 'function') vibe();
+        
+        let pills = document.querySelectorAll('.fulfillment-bar .f-pill');
+        pills.forEach(p => p.classList.remove('active'));
+        if(elem) elem.classList.add('active');
+
+        let shopCards = document.querySelectorAll('#home-shop-list .shop-card, #home-shop-list > div');
+        shopCards.forEach(card => {
+            let hasDelivery = card.dataset.delivery !== "false";
+            let hasPickup = card.dataset.pickup !== "false";
+
+            if (type === 'all') {
+                card.style.display = 'flex';
+            } else if (type === 'delivery') {
+                card.style.display = hasDelivery ? 'flex' : 'none';
+            } else if (type === 'pickup') {
+                card.style.display = hasPickup ? 'flex' : 'none';
+            }
+        });
+    }
+
+    // PRESERVED ANIMATION FUNCTIONS
+    function triggerBasketBurst(category) {
+        if(typeof vibe === 'function') vibe();
+        let loader = document.getElementById('vibe-loader');
+        if(loader) {
+            loader.style.display = 'flex';
+            let basket = document.getElementById('burst-basket');
+            let i1 = document.getElementById('b-item-1');
+            let i2 = document.getElementById('b-item-2');
+            let i3 = document.getElementById('b-item-3');
+            
+            basket.classList.add('shake-basket');
+            
+            setTimeout(() => {
+                i1.classList.add('active'); i2.classList.add('active'); i3.classList.add('active');
+            }, 300);
+
+            setTimeout(() => {
+                loader.style.display = 'none';
+                basket.classList.remove('shake-basket');
+                i1.classList.remove('active'); i2.classList.remove('active'); i3.classList.remove('active');
+                openFreshVendorSelect(category);
+            }, 1500);
+        }
+    }
+
+    function openFreshVendorSelect(category) {
+        let modal = document.getElementById('modal-fresh-vendor');
+        let list = document.getElementById('fresh-vendor-list');
+        if(!modal || !list) return;
+        
+        let validVendors = shopsData.filter(s => s.looseItems && s.isOpen);
+        let html = '';
+        validVendors.forEach(s => {
+            html += `<div class="policy-card" onclick="selectFreshVendor('${s.id}', '${category}')" style="margin-bottom:10px;">
+                <div style="font-size:24px; margin-right:10px;">🏪</div>
+                <div><h4>${s.name}</h4><p>⭐ ${s.rating} • ${s.dist}m away</p></div>
+            </div>`;
+        });
+        list.innerHTML = html;
+        modal.style.display = 'flex';
+    }
+
+    let pendingFreshVendorId = null;
+    let pendingFreshCategory = null;
+
+    function selectFreshVendor(shopId, category) {
+        if(typeof vibe === 'function') vibe();
+        let modal = document.getElementById('modal-fresh-vendor');
+        if(modal) modal.style.display = 'none';
+        
+        let targetShop = shopsData.find(s=>s.id===shopId).name;
+        let hasOtherVendorInCart = realMultiCart.some(c => c.shop !== targetShop);
+        
+        if(hasOtherVendorInCart) {
+            pendingFreshVendorId = shopId;
+            pendingFreshCategory = category;
+            let clashModal = document.getElementById('modal-fresh-clash');
+            if(clashModal) clashModal.style.display = 'flex';
+        } else {
+            if(typeof openCategorySplit === 'function') {
+                currentOpenShopId = shopId; 
+                openCategorySplit(category);
+            }
+        }
+    }
+
+    function clearCartAndProceedFresh() {
+        if(typeof vibe === 'function') vibe();
+        realMultiCart = []; 
+        if(typeof updateBadge === 'function') updateBadge();
+        
+        let clashModal = document.getElementById('modal-fresh-clash');
+        if(clashModal) clashModal.style.display = 'none';
+        if(typeof showToast === 'function') showToast("Cart Cleared! Fresh mode active.");
+        
+        if(typeof openCategorySplit === 'function') {
+            currentOpenShopId = pendingFreshVendorId;
+            openCategorySplit(pendingFreshCategory);
+        }
+    }
+</script>
+
+</body>
+</html>
